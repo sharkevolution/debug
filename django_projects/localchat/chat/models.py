@@ -29,6 +29,12 @@ class Message(models.Model):
     content = models.CharField(max_length=512)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+    def last_name(self):
+        return self.user.last_name
+    
+    def first_name(self):
+        return self.user.first_name
+
     def __str__(self):
-        return f'{self.user.username}: {self.content} [{self.timestamp}]'
+        return f'{self.user}: {self.content} [{self.timestamp}]'
 
