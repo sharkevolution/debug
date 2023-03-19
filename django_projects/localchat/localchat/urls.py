@@ -14,13 +14,12 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
-# core/urls.py
-
+# localchat/urls.py
 from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
     path('chat/', include('chat.urls')),  # new
     path('admin/', admin.site.urls),
+    path('accounts/', include('django.contrib.auth.urls')), # add Sitala
 ]
-
