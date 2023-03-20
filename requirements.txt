@@ -1,2 +1,2 @@
-django
-channels
+Django==4.0
+channels==3.0.4
