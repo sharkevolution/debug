@@ -23,3 +23,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')), # add Sitala
 ]
+
+handler404 = "chat.views.handler404"

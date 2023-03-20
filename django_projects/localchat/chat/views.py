@@ -17,7 +17,9 @@ def index_view(request):
 
 @login_required
 def room_view(request, room_name):
+
     chat_room, created = Room.objects.get_or_create(name=room_name)
+    
     return render(request, 'room.html', {
         'room': chat_room,
     })
@@ -43,3 +45,8 @@ def user_login(request):
         form = LoginForm()
     return render(request, 'account/login.html', {'form': form})
 
+
+def handler404(request, *args, **argv):
+    response = render(request, '404.html')
+    response.status_code = 404
+    return response

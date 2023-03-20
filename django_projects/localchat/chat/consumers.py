@@ -23,6 +23,8 @@ class ChatConsumer(WebsocketConsumer):
         self.room = Room.objects.get(name=self.room_name)
         self.user = self.scope['user']  # new
 
+        print(self.room_name)
+
         # connection has to be accepted
         self.accept()
 

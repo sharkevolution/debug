@@ -141,3 +141,5 @@ LOGOUT_URL = 'logout'
 
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
+SECURE_CONTENT_TYPE_NOSNIFF = False
+
