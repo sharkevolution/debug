@@ -19,7 +19,7 @@ from django.contrib import admin
 from django.urls import path, include
 
 urlpatterns = [
-    path('chat/', include('chat.urls')),  # new
+    path('', include('chat.urls')),  # new
     path('admin/', admin.site.urls),
     path('accounts/', include('django.contrib.auth.urls')), # add Sitala
 ]
