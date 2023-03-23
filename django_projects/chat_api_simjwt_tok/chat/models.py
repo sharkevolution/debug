@@ -8,8 +8,8 @@ from django.db import models
 class CustomUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
         
-    token_access = models.CharField(max_length=255, null=True, blank=True)
-    token_refresh =  models.CharField(max_length=255, null=True, blank=True)
+    token_access = models.TextField(max_length=255, null=True, blank=True)
+    token_refresh =  models.TextField(max_length=255, null=True, blank=True)
     
     def __str__(self):
         return self.user.username
