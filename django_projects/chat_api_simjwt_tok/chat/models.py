@@ -4,20 +4,22 @@ from __future__ import unicode_literals
 from django.contrib.auth.models import User
 from django.db import models
 
-from django.contrib.auth.models import AbstractUser
 
-
-class User(AbstractUser):
-    bio = models.CharField(max_length=160, null=True, blank=True)
-    birthday = models.DateField(null=True, blank=True)
+class CustomUser(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+        
+    token_access = models.CharField(max_length=255, null=True, blank=True)
+    token_refresh =  models.CharField(max_length=255, null=True, blank=True)
+    
     def __str__(self):
-        return self.username
+        return self.user.username
 
 
 
 class Room(models.Model):
     name = models.CharField(max_length=128)
-    online = models.ManyToManyField(to=User, blank=True)
+    # online = models.ManyToManyField(to=User, blank=True)
+    online = models.ManyToManyField(to=CustomUser, blank=True)
 
     def get_online_count(self):
         return self.online.count()
@@ -35,7 +37,9 @@ class Room(models.Model):
 
 
 class Message(models.Model):
-    user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    # user = models.ForeignKey(to=User, on_delete=models.CASCADE)
+    user = models.ForeignKey(to=CustomUser, on_delete=models.CASCADE)
+
     room = models.ForeignKey(to=Room, on_delete=models.CASCADE)
     content = models.CharField(max_length=512)
     timestamp = models.DateTimeField(auto_now_add=True)
