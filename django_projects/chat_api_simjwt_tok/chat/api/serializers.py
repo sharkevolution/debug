@@ -1,9 +1,12 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.models import TokenUser
 
 from chat.models import Room, Message, CustomUser
+
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -16,13 +19,17 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_token(self, user):
         refresh = RefreshToken.for_user(user)
-
-        # cust = TokenUser()
-        # print(str(cust.id))
-
-        # cust = CustomUser(user.id)
-        # cust.token_access = str(refresh.access_token)
-        # cust.save()
+        
+        # Добавляем токены в связанную таблицу ----
+        access_token_obj = refresh.access_token
+        user_id = access_token_obj['user_id']   
+        
+        cur_user = User.objects.get(id=int(user_id))
+        acc = CustomUser.objects.create(user=cur_user)
+        acc.token_access = str(refresh.access_token)
+        acc.token_refresh = str(refresh)
+        acc.save()
+        # ----- Добавляем токены в связанную таблицу ----
 
         return {
             'refresh': str(refresh),
