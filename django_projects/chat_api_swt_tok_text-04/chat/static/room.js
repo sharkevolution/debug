@@ -73,6 +73,12 @@ function connect() {
                 break;
             case "user_join":
                 chatLog.value += data.user + " joined the room.\n";
+
+                // Добавить загрузку последних 10 сообщений в комнате
+                chatLog.value += 'Add: ' + data.last_messages;
+                console.log('Add: ' + data.last_messages);
+                //----------------------------------------------------
+
                 onlineUsersSelectorAdd(data.user);
                 break;
             case "user_leave":

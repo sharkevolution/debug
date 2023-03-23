@@ -7,6 +7,8 @@ from channels.generic.websocket import WebsocketConsumer
 
 from .models import Room, Message  # new import
 
+import logging
+logger = logging.getLogger(__name__)
 
 class ChatConsumer(WebsocketConsumer):
 
@@ -24,8 +26,6 @@ class ChatConsumer(WebsocketConsumer):
         self.room = Room.objects.get(name=self.room_name)
         self.user = self.scope['user']  # new
         self.user_inbox = f'inbox_{self.user.username}'  # new
-
-        print(self.room_name)
 
         # connection has to be accepted
         self.accept()
@@ -57,6 +57,7 @@ class ChatConsumer(WebsocketConsumer):
                 {
                     'type': 'user_join',
                     'user': self.user.username,
+                    'last_messages': 'test_messages'
                 }
             )
             self.room.online.add(self.user)
@@ -91,6 +92,8 @@ class ChatConsumer(WebsocketConsumer):
     def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
+
+        logger.warning(message)
 
         if not self.user.is_authenticated:  # new
             return                          # new
@@ -134,8 +137,10 @@ class ChatConsumer(WebsocketConsumer):
     def chat_message(self, event):
         self.send(text_data=json.dumps(event))
 
-
     def user_join(self, event):
+
+        logging.warning(json.dumps(event))
+        
         self.send(text_data=json.dumps(event))
 
     def user_leave(self, event):

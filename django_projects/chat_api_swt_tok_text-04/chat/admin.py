@@ -19,4 +19,4 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('user', 'room_name', 'first_name', 'last_name', 'content', 'timestamp')
+    list_display = ('id', 'user', 'user_to', 'status_text', 'room_name', 'content', 'timestamp')
