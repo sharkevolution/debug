@@ -142,6 +142,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 SECURE_CONTENT_TYPE_NOSNIFF = False
 
 REST_FRAMEWORK = {
+
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
+    'PAGE_SIZE': 2,
+
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
         ],
@@ -149,8 +153,7 @@ REST_FRAMEWORK = {
         'rest_framework_simplejwt.authentication.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
-    ]
-
+    ],
 }
 
 from datetime import timedelta
