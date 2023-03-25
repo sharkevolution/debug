@@ -35,6 +35,12 @@ chatMessageInput.onkeyup = function(e) {
 // clear the 'chatMessageInput' and forward the message
 chatMessageSend.onclick = function() {
     if (chatMessageInput.value.length === 0) return;
+    // Отправка сообщения
+    console.log('Room.js Отправка сообщения: ' + JSON.stringify({
+        "message": chatMessageInput.value,
+    }));
+
+
     chatSocket.send(JSON.stringify({
         "message": chatMessageInput.value,
     }));
@@ -60,7 +66,6 @@ function connect() {
 
     chatSocket.onmessage = function(e) {
         const data = JSON.parse(e.data);
-        console.log(data);
 
         switch (data.type) {
             case "chat_message":
@@ -72,12 +77,10 @@ function connect() {
                 }
                 break;
             case "user_join":
+                // Присоединение пользователя в комнату
                 chatLog.value += data.user + " joined the room.\n";
-
-                // Добавить загрузку последних 10 сообщений в комнате
                 
-                chatLog.value += 'Add: ' + data.last_messages;
-                console.log('Add: ' + data.last_messages);
+                console.log('Room.js Add: ' + data.user);
 
                 //----------------------------------------------------
 

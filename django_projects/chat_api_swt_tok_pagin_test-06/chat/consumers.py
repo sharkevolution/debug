@@ -5,7 +5,7 @@ import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 
-from .models import Room, Message  # new import
+from .models import Room, Message, User  # new import
 
 import logging
 logger = logging.getLogger(__name__)
@@ -77,7 +77,6 @@ class ChatConsumer(WebsocketConsumer):
                 self.channel_name,
             )
 
-
         if self.user.is_authenticated:
             # send the leave event to the room
             async_to_sync(self.channel_layer.group_send)(
@@ -93,7 +92,7 @@ class ChatConsumer(WebsocketConsumer):
         text_data_json = json.loads(text_data)
         message = text_data_json['message']
 
-        logger.warning(message)
+        logger.warning('Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
 
         if not self.user.is_authenticated:  # new
             return                          # new
@@ -119,9 +118,16 @@ class ChatConsumer(WebsocketConsumer):
                 'target': target,
                 'message': target_msg,
             }))
+
+            user_destination = User.objects.get(username=target)
+
+            # Сохраняем запись, private
+            Message.objects.create(user=self.user, recipient=user_destination, 
+                                    status_text='private', 
+                                    room=self.room, content=message)
+
             return
         # ---------------- end of new ----------------
-
 
         # send chat message event to the room
         async_to_sync(self.channel_layer.group_send)(
@@ -132,14 +138,17 @@ class ChatConsumer(WebsocketConsumer):
                 'message': message,
             }
         )
-        Message.objects.create(user=self.user, room=self.room, content=message)  # new
+        # Сохраняем запись, public
+        Message.objects.create(user=self.user, recipient=self.user, 
+                                    status_text='public', 
+                                    room=self.room, content=message)
 
     def chat_message(self, event):
         self.send(text_data=json.dumps(event))
 
     def user_join(self, event):
 
-        logging.warning(json.dumps(event))
+        logging.warning('Consumers.py user_join: ' + json.dumps(event))
         
         self.send(text_data=json.dumps(event))
 
