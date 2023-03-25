@@ -4,8 +4,11 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from chat.models import Room, Message, CustomUser
 
-import logging
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
+
+import logging
 logger = logging.getLogger(__name__)
 
 
@@ -57,3 +60,34 @@ class SubjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['name', 'online', 'get_online_count']
+
+
+class SendMessagesSerializer(serializers.ModelSerializer):
+    '''
+        Реализовать сохранение в базу и отправку уведомления о новом сообщении
+
+        Проверить и сделать валидацию 26.03.2023
+
+    '''
+
+    class Meta:
+        model = Room
+        fields = ['name']
+
+    def sendmessage(self, validated_data):
+        id_room = validated_data.pop('name', None)
+        instance = self.Meta.model(**validated_data)
+        logging.warning('ok api')
+        if id_room:
+            # instance.(id_room)
+            # instance.save()
+            return instance           
+
+
+
+    # channel_layer = get_channel_layer()
+    # print("user.id {}".format(self.user.id))
+    # print("user.id {}".format(self.recipient.id))
+
+    # async_to_sync(channel_layer.group_send)("{}".format(self.user.id), notification)
+    # async_to_sync(channel_layer.group_send)("{}".format(self.recipient.id), notification)

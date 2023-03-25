@@ -18,6 +18,7 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = None
         self.room = None
         self.user = None  # new
+        self.user_id = None # Sitala
         self.user_inbox = None  # new
 
     def connect(self):
@@ -25,6 +26,7 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = f'chat_{self.room_name}'
         self.room = Room.objects.get(name=self.room_name)
         self.user = self.scope['user']  # new
+        self.user_id = self.scope["session"]["_auth_user_id"]  # Sitala
         self.user_inbox = f'inbox_{self.user.username}'  # new
 
         # connection has to be accepted
@@ -57,7 +59,7 @@ class ChatConsumer(WebsocketConsumer):
                 {
                     'type': 'user_join',
                     'user': self.user.username,
-                    'last_messages': 'test_messages'
+                    'last_messages': self.user_id,
                 }
             )
             self.room.online.add(self.user)

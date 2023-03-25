@@ -4,8 +4,14 @@ from django.contrib import admin
 from .models import Room, Message, CustomUser
 from django.utils.html import format_html
 
-admin.site.register(Room)
+# admin.site.register(Room)
 # admin.site.register(CustomUser)
+
+class RoomAdmin(admin.ModelAdmin):
+    list_display = ('name', 'display_room')
+
+admin.site.register(Room, RoomAdmin)
+
 
 @admin.register(CustomUser)
 class CustomUserAdmin(admin.ModelAdmin):

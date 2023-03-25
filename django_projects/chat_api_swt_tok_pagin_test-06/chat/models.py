@@ -36,11 +36,18 @@ class Room(models.Model):  # Thread
         self.online.remove(user)
         self.save()
 
-    def __str__(self):
-        return f'{self.name} ({self.get_online_count()})'
-
     class Meta:
         ordering = ["name"]
+    
+    def display_room(self):
+        """
+        Creates a string for the Room. This is required to display room in Admin.
+        """
+        return ', '.join([ str(u.username) for u in self.online.all() ])
+    
+
+    def __str__(self):
+        return f'{self.name} ({self.get_online_count()})'
 
 
 class Message(models.Model):
@@ -74,3 +81,4 @@ class Message(models.Model):
 
     class Meta:
         ordering = ["room"]
+

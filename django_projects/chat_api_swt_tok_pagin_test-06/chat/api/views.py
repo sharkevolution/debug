@@ -1,6 +1,5 @@
 from rest_framework import generics
 from chat.models import Room, Message
-from chat.api.serializers import SubjectSerializer
 from chat.api.serializers import serializers
 
 from rest_framework.permissions import IsAuthenticated
@@ -13,7 +12,7 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
-from chat.api.serializers import UserSerializer
+from chat.api.serializers import UserSerializer, SubjectSerializer, SendMessagesSerializer
 
 
 class RoomsAPIListPagination(PageNumberPagination):
@@ -40,6 +39,24 @@ def create_user(request):
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
+        return Response(
+            {'data': serializer.data},
+            status=status.HTTP_201_CREATED
+        )
+
+    return Response(
+        {'data': serializer.errors},
+        status=status.HTTP_400_BAD_REQUEST
+    )
+
+
+@api_view(['POST'])
+def send_message_user(request):
+
+    serializer = SubjectSerializer(data=request.data)
+
+    if serializer.is_valid():
+        # serializer.save()
         return Response(
             {'data': serializer.data},
             status=status.HTTP_201_CREATED
