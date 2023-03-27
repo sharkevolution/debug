@@ -1,14 +1,17 @@
 # chat/admin.py
 
 from django.contrib import admin
-from .models import Room, Message, CustomUser
-from django.utils.html import format_html
+from .models import Room, Message, CustomUser, User
 
 # admin.site.register(Room)
 # admin.site.register(CustomUser)
 
+
 class RoomAdmin(admin.ModelAdmin):
     list_display = ('name', 'display_room')
+    readonly_fields = ('created', )
+    fields = ('name', 'online', 'updated', 'created')
+
 
 admin.site.register(Room, RoomAdmin)
 

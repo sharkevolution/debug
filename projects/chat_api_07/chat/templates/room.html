@@ -17,7 +17,7 @@
         }
 
         #onlineUsersSelector {
-            height: 162px;
+            height: 300px;
         }
     </style>
 </head>
@@ -44,33 +44,21 @@
                 </select>
 
                 <div class="mb-2">
-                <label for="Users">Контакты</label>
-
-                <select name="cars" id="cars" class="form-control" multiple>
-                    <option value="volvo">Volvo</option>
-                    <option value="saab">Saab</option>
-                    <option value="opel">Opel</option>
-                    <option value="audi">Audi</option>
-                </select>
+                    <label for="allUsers">Контакты</label>
+                    <select multiple class="form-control" id="allUsersSelector">
+                    </select>
+                </div>
+                <div class="input-group-append">
+                    <button class="btn btn-success" id="userAddRoom" type="button">Добавить</button>
+                    <button class="btn btn-success" id="userRemoveRoom" type="button">Удалить</button>
+                </div>
             </div>
-                    <div class="input-group-append">
-                        <button class="btn btn-success" id="" type="button">Добавить</button>
-                        <button class="btn btn-success" id="" type="button">Удалить</button>
-                    </div>
-
-            </div>
-
-
             <div class="col-12 col-md-4">
-
             </div>
-
         </div>
         {{ room.name|json_script:"roomName" }}
     </div>
-
     <script src="{% static 'js/room.js' %}"></script>
-
 </body>
 
 </html>

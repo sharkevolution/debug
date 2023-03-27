@@ -54,16 +54,18 @@ class ChatConsumer(WebsocketConsumer):
 
         if self.user.is_authenticated:
             # send the join event to the room
+            user_obg_list = User.objects.all()
+
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     'type': 'user_join',
-                    'user': self.user.username,
-                    'last_messages': self.user_id,
+                    'user': self.user.username,  # Имя user присоединяющегося
+                    'user_list': [b.username for b in user_obg_list],  # Список пользователей
+                    'username_admin': '',
                 }
             )
             self.room.online.add(self.user)
-
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(

@@ -23,7 +23,10 @@ class Room(models.Model):  # Thread
     name = models.CharField(max_length=128)  
     online = models.ManyToManyField(to=User, blank=True)  # Participante
     created = models.DateTimeField(auto_now_add=True)
-    updated = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["name"]
 
     def get_online_count(self):
         return self.online.count()
@@ -35,19 +38,15 @@ class Room(models.Model):  # Thread
     def leave(self, user):
         self.online.remove(user)
         self.save()
-
-    class Meta:
-        ordering = ["name"]
     
     def display_room(self):
         """
         Creates a string for the Room. This is required to display room in Admin.
         """
-        return ', '.join([ str(u.username) for u in self.online.all() ])
-    
+        return ', '.join([ n.username for n in self.online.all() ])
 
     def __str__(self):
-        return f'{self.name} ({self.get_online_count()})'
+        return f'{self.name} ({self.online.count()})'
 
 
 class Message(models.Model):

@@ -6,6 +6,7 @@ let chatLog = document.querySelector("#chatLog");
 let chatMessageInput = document.querySelector("#chatMessageInput");
 let chatMessageSend = document.querySelector("#chatMessageSend");
 let onlineUsersSelector = document.querySelector("#onlineUsersSelector");
+let allUsersSelector = document.querySelector("#allUsersSelector");  // Список пользователей
 
 // adds a new option to 'onlineUsersSelector'
 function onlineUsersSelectorAdd(value) {
@@ -22,24 +23,43 @@ function onlineUsersSelectorRemove(value) {
     if (oldOption !== null) oldOption.remove();
 }
 
+// adds a new option to 'allUsersSelector' Список всех пользователей
+function allUsersSelectorAdd(value) {
+
+    for (const element of value) {
+
+        if (document.querySelector("#allUsersSelector option[value='" + element + "']")) return;
+        
+        let newOption = document.createElement("option");
+        newOption.value = element;
+        newOption.innerHTML = element;
+        allUsersSelector.appendChild(newOption);
+    }
+}
+
+// removes an option from 'allUsersSelector' Удаление пользователей из группы
+function allUsersSelectorRemove(value) {
+    let oldOption = document.querySelector("#allUsersSelector option[value='" + value + "']");
+    if (oldOption !== null) oldOption.remove();
+}
+
 // focus 'chatMessageInput' when user opens the page
 chatMessageInput.focus();
 
 // submit if the user presses the enter key
-chatMessageInput.onkeyup = function(e) {
+chatMessageInput.onkeyup = function (e) {
     if (e.keyCode === 13) {  // enter key
         chatMessageSend.click();
     }
 };
 
 // clear the 'chatMessageInput' and forward the message
-chatMessageSend.onclick = function() {
+chatMessageSend.onclick = function () {
     if (chatMessageInput.value.length === 0) return;
     // Отправка сообщения
     console.log('Room.js Отправка сообщения: ' + JSON.stringify({
         "message": chatMessageInput.value,
     }));
-
 
     chatSocket.send(JSON.stringify({
         "message": chatMessageInput.value,
@@ -52,19 +72,19 @@ let chatSocket = null;
 function connect() {
     chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName + "/");
 
-    chatSocket.onopen = function(e) {
+    chatSocket.onopen = function (e) {
         console.log("Successfully connected to the WebSocket.");
     }
 
-    chatSocket.onclose = function(e) {
+    chatSocket.onclose = function (e) {
         console.log("WebSocket connection closed unexpectedly. Trying to reconnect in 2s...");
-        setTimeout(function() {
+        setTimeout(function () {
             console.log("Reconnecting...");
             connect();
         }, 2000);
     };
 
-    chatSocket.onmessage = function(e) {
+    chatSocket.onmessage = function (e) {
         const data = JSON.parse(e.data);
 
         switch (data.type) {
@@ -77,14 +97,12 @@ function connect() {
                 }
                 break;
             case "user_join":
+                
                 // Присоединение пользователя в комнату
                 chatLog.value += data.user + " joined the room.\n";
-                
-                console.log('Room.js Add: ' + data.user);
-
-                //----------------------------------------------------
-
                 onlineUsersSelectorAdd(data.user);
+                allUsersSelectorAdd(data.user_list);
+
                 break;
             case "user_leave":
                 chatLog.value += data.user + " left the room.\n";
@@ -105,7 +123,7 @@ function connect() {
         chatLog.scrollTop = chatLog.scrollHeight;
     };
 
-    chatSocket.onerror = function(err) {
+    chatSocket.onerror = function (err) {
         console.log("WebSocket encountered an error: " + err.message);
         console.log("Closing the socket.");
         chatSocket.close();
@@ -113,7 +131,7 @@ function connect() {
 }
 connect();
 
-onlineUsersSelector.onchange = function() {
+onlineUsersSelector.onchange = function () {
     chatMessageInput.value = "/pm " + onlineUsersSelector.value + " ";
     onlineUsersSelector.value = null;
     chatMessageInput.focus();
