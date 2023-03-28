@@ -5,7 +5,7 @@ import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 
-from .models import Room, Message, User  # new import
+from .models import Room, Message, User, ParticipanteRoom  # new import
 
 import logging
 logger = logging.getLogger(__name__)
@@ -65,7 +65,13 @@ class ChatConsumer(WebsocketConsumer):
                     'username_admin': '',
                 }
             )
-            self.room.participante.add(self.user)
+            logging.warning('paticipante add to room' + str(self.user))
+            r1 = Room.objects.get(name=self.room_name)
+            u1 = User.objects.get(username=self.user)
+            super_part = ParticipanteRoom.objects.create(user=u1, room=r1, user_status='off')
+            super_part.save()
+            
+            # self.room.participante.add(self.user)
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
