@@ -13,6 +13,12 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
 from chat.api.serializers import UserSerializer, SubjectSerializer, SendMessagesSerializer
+from chat.api.serializers import TokenObtainPairView, MyTokenObtainPairSerializer
+
+
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    serializer_class = MyTokenObtainPairSerializer
 
 
 class RoomsAPIListPagination(PageNumberPagination):
@@ -36,6 +42,10 @@ class RoomsAPIDetailView(generics.RetrieveAPIView):
 
 @api_view(['POST'])
 def create_user(request):
+    ''' 
+        Create User
+    '''
+
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
@@ -53,7 +63,7 @@ def create_user(request):
 @api_view(['POST'])
 def send_message_user(request):
 
-    serializer = SubjectSerializer(data=request.data)
+    serializer = SendMessagesSerializer(data=request.data)
 
     if serializer.is_valid():
         # serializer.save()

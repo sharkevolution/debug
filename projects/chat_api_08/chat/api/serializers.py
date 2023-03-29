@@ -1,6 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
+
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.serializers import TokenRefreshSerializer
+from rest_framework_simplejwt.state import token_backend
 
 from chat.models import Room, Message, CustomUser
 
@@ -10,6 +13,30 @@ from channels.layers import get_channel_layer
 
 import logging
 logger = logging.getLogger(__name__)
+
+
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+
+        # Add custom claims
+        # token['name'] = user.name
+        # ...
+        logging.warning('ХУЙ')
+
+        return token
+
+
+
+class SubjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['name']
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -49,17 +76,9 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class MesageSerializer(serializers.ModelSerializer):
-
     class Meta:
         model = Message
         fields = ['id', 'content', 'user', 'room_name', 'timestamp']
-
-
-class SubjectSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = Room
-        fields = ['name', 'online', 'get_online_count']
 
 
 class SendMessagesSerializer(serializers.ModelSerializer):
