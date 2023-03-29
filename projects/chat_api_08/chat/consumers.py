@@ -100,58 +100,65 @@ class ChatConsumer(WebsocketConsumer):
 
     def receive(self, text_data=None, bytes_data=None):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
+        
+        logging.warning(text_data_json.get('participantes'))
+        
+        if participantes := text_data_json.get('participantes'):
+            logging.warning('Получен список на добавление')
+            return
+            
+        if message := text_data_json.get('message'):
 
-        logger.warning('Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
+            logger.warning('Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
 
-        if not self.user.is_authenticated:  # new
-            return                          # new
+            if not self.user.is_authenticated:  # new
+                return                          # new
 
-        # -------------------- new --------------------
-        if message.startswith('/pm '):
-            split = message.split(' ', 2)
-            target = split[1]
-            target_msg = split[2]
+            # -------------------- new --------------------
+            if message.startswith('/pm '):
+                split = message.split(' ', 2)
+                target = split[1]
+                target_msg = split[2]
 
-            # send private message to the target
-            async_to_sync(self.channel_layer.group_send)(
-                f'inbox_{target}',
-                {
-                    'type': 'private_message',
-                    'user': self.user.username,
+                # send private message to the target
+                async_to_sync(self.channel_layer.group_send)(
+                    f'inbox_{target}',
+                    {
+                        'type': 'private_message',
+                        'user': self.user.username,
+                        'message': target_msg,
+                    }
+                )
+                # send private message delivered to the user
+                self.send(json.dumps({
+                    'type': 'private_message_delivered',
+                    'target': target,
                     'message': target_msg,
+                }))
+
+                user_destination = User.objects.get(username=target)
+
+                # Сохраняем запись, private
+                Message.objects.create(user=self.user, recipient=user_destination, 
+                                        status_text='private', 
+                                        room=self.room, content=message)
+
+                return
+            # ---------------- end of new ----------------
+
+            # send chat message event to the room
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'user': self.user.username,  # new
+                    'message': message,
                 }
             )
-            # send private message delivered to the user
-            self.send(json.dumps({
-                'type': 'private_message_delivered',
-                'target': target,
-                'message': target_msg,
-            }))
-
-            user_destination = User.objects.get(username=target)
-
-            # Сохраняем запись, private
-            Message.objects.create(user=self.user, recipient=user_destination, 
-                                    status_text='private', 
-                                    room=self.room, content=message)
-
-            return
-        # ---------------- end of new ----------------
-
-        # send chat message event to the room
-        async_to_sync(self.channel_layer.group_send)(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'user': self.user.username,  # new
-                'message': message,
-            }
-        )
-        # Сохраняем запись, public
-        Message.objects.create(user=self.user, recipient=self.user, 
-                                    status_text='public', 
-                                    room=self.room, content=message)
+            # Сохраняем запись, public
+            Message.objects.create(user=self.user, recipient=self.user, 
+                                        status_text='public', 
+                                        room=self.room, content=message)
 
     def chat_message(self, event):
         self.send(text_data=json.dumps(event))

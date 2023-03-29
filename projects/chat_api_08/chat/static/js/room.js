@@ -6,7 +6,10 @@ let chatLog = document.querySelector("#chatLog");
 let chatMessageInput = document.querySelector("#chatMessageInput");
 let chatMessageSend = document.querySelector("#chatMessageSend");
 let onlineUsersSelector = document.querySelector("#onlineUsersSelector");
+
 let allUsersSelector = document.querySelector("#allUsersSelector");  // Список пользователей
+let chatUserSelectorAdd = document.querySelector("#userAddRoom");
+let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");  
 
 // adds a new option to 'onlineUsersSelector'
 function onlineUsersSelectorAdd(value) {
@@ -23,7 +26,8 @@ function onlineUsersSelectorRemove(value) {
     if (oldOption !== null) oldOption.remove();
 }
 
-// adds a new option to 'allUsersSelector' Список всех пользователей
+// adds a new option to 'allUsersSelector' 
+// Список всех пользователей
 function allUsersSelectorAdd(value) {
 
     for (const element of value) {
@@ -38,10 +42,10 @@ function allUsersSelectorAdd(value) {
 }
 
 // removes an option from 'allUsersSelector' Удаление пользователей из группы
-function allUsersSelectorRemove(value) {
-    let oldOption = document.querySelector("#allUsersSelector option[value='" + value + "']");
-    if (oldOption !== null) oldOption.remove();
-}
+// function allUsersSelectorRemove(value) {
+//     let oldOption = document.querySelector("#allUsersSelector option[value='" + value + "']");
+//     if (oldOption !== null) oldOption.remove();
+// }
 
 // focus 'chatMessageInput' when user opens the page
 chatMessageInput.focus();
@@ -66,6 +70,44 @@ chatMessageSend.onclick = function () {
     }));
     chatMessageInput.value = "";
 };
+
+
+// focus 'userAddRoom' when user opens the page
+chatUserSelectorAdd.focus();
+
+// Пользователи на добавление в группу 
+chatUserSelectorAdd.onclick = function () {
+    console.log('Add new users to the room');
+    var selected = [];
+    for (var option of document.getElementById('allUsersSelector').options)
+    {
+        if (option.selected) {
+            selected.push(option.value);
+        }
+    }
+    chatSocket.send(JSON.stringify({
+        "participantes": {'userAddRoom': selected},
+    }));
+};
+
+// focus 'userRemoveRoom' when user opens the page
+chatUserSelectorRemove.focus();
+
+// Пользователи на удаление из группы 
+chatUserSelectorRemove.onclick = function () {
+    console.log('Delete users into to the room');
+    var selected = [];
+    for (var option of document.getElementById('allUsersSelector').options)
+    {
+        if (option.selected) {
+            selected.push(option.value);
+        }
+    }
+    chatSocket.send(JSON.stringify({
+        "participantes": {'userRemoveRoom': selected},
+    }));
+};
+
 
 let chatSocket = null;
 

@@ -65,11 +65,9 @@ class SubjectSerializer(serializers.ModelSerializer):
 class SendMessagesSerializer(serializers.ModelSerializer):
     '''
         Реализовать сохранение в базу и отправку уведомления о новом сообщении
-
         Проверить и сделать валидацию 26.03.2023
 
     '''
-
     class Meta:
         model = Room
         fields = ['name']
