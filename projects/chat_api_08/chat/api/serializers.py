@@ -2,8 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User
 
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework_simplejwt.serializers import TokenRefreshSerializer
-from rest_framework_simplejwt.state import token_backend
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from chat.models import Room, Message, CustomUser
 
@@ -15,22 +14,25 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework_simplejwt.views import TokenObtainPairView
-
-
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
 
-        # Add custom claims
-        # token['name'] = user.name
-        # ...
-        logging.warning('ХУЙ')
+        # Save user token to base
+        access_token_obj = token.access_token
+        user_id = access_token_obj['user_id'] 
+        cur_user = User.objects.get(id=int(user_id))
+        
+        acc = CustomUser.objects.get(user=cur_user)
+        acc.token_access = str(token.access_token)
+        acc.token_refresh = str(token)
+        acc.save()
+
+        # logging.warning('refresh: ' + str(token))
+        # logging.warning('access: ' + str(str(token.access_token)))
 
         return token
-
 
 
 class SubjectSerializer(serializers.ModelSerializer):
@@ -50,15 +52,15 @@ class UserSerializer(serializers.ModelSerializer):
     def get_token(self, user):
         refresh = RefreshToken.for_user(user)
         
-        # Добавляем токены в связанную таблицу ----
-        access_token_obj = refresh.access_token
-        user_id = access_token_obj['user_id']   
+        # ----- Добавляем токены в связанную таблицу ----
+        # access_token_obj = refresh.access_token
+        # user_id = access_token_obj['user_id']   
         
-        cur_user = User.objects.get(id=int(user_id))
-        acc = CustomUser.objects.create(user=cur_user)
-        acc.token_access = str(refresh.access_token)
-        acc.token_refresh = str(refresh)
-        acc.save()
+        # cur_user = User.objects.get(id=int(user_id))
+        # acc = CustomUser.objects.create(user=cur_user)
+        # acc.token_access = str(refresh.access_token)
+        # acc.token_refresh = str(refresh)
+        # acc.save()
         # ----- Добавляем токены в связанную таблицу ----
 
         return {

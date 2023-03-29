@@ -12,9 +12,12 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
-from chat.api.serializers import UserSerializer, SubjectSerializer, SendMessagesSerializer
-from chat.api.serializers import TokenObtainPairView, MyTokenObtainPairSerializer
+from chat.api.serializers import (UserSerializer, 
+                                    SubjectSerializer, 
+                                    SendMessagesSerializer, 
+                                    MyTokenObtainPairSerializer)
 
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
