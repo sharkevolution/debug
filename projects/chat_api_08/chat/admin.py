@@ -33,4 +33,4 @@ class CustomUserAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'recipient', 'status_text', 'room_name', 'content', 'timestamp')
+    list_display = ('id', 'user', 'recipient', 'status_text', 'room_name', 'content', 'is_read', 'created')

@@ -65,14 +65,12 @@ class Message(models.Model):
     
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, verbose_name='recipient', 
                                 related_name='to_user', db_index=True)
-    # recipient = models.CharField(max_length=50, null=True, blank=True)
     room = models.ForeignKey(to=Room, on_delete=models.CASCADE)  # thread
 
     content = models.CharField(max_length=512)
     status_text = models.CharField(max_length=50, null=True, blank=True)  # Статус сообщения (private or public)
-    is_read = models.DateTimeField(auto_now_add=True)
-
-    timestamp = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
 
     def last_name(self):
         return self.user.last_name
@@ -84,7 +82,7 @@ class Message(models.Model):
         return self.room.name
 
     def __str__(self):
-        return f'{self.user}: {self.content} [{self.timestamp}]'
+        return f'{self.user}: {self.content} [{self.created}]'
 
     class Meta:
         ordering = ["room"]
