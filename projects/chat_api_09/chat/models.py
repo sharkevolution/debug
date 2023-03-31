@@ -28,6 +28,7 @@ class Room(models.Model):  # Thread
     online = models.ManyToManyField(to=User, blank=True, through='OnlineParticipanteRoom')
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True, blank=True)
+    limit_users = models.IntegerField(default=2)
 
     class Meta:
         ordering = ["name"]
@@ -48,7 +49,7 @@ class Room(models.Model):  # Thread
         # self.online.remove(user)
         # self.save()
     
-    def display_room(self):
+    def display_users(self):
         """
         Creates a string for the Room. This is required to display room in Admin.
         """

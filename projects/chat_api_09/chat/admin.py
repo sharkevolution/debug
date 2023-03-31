@@ -13,7 +13,7 @@ class OnlineParticipanteRoomAdmin(admin.ModelAdmin):
 
 
 class RoomAdmin(admin.ModelAdmin):
-    list_display = ('name', 'display_room')
+    list_display = ('name', 'display_users', 'limit_users')
     # readonly_fields = ('created', )
     # fields = ('name', 'participante', 'updated', 'created')
 
