@@ -27,14 +27,10 @@ function onlineUsersSelectorRemove(value) {
     if (oldOption !== null) oldOption.remove();
 }
 
-// adds a new option to 'allUsersSelector' 
-// Список всех пользователей
+// Добавление списка всех пользователей, adds a new option to 'allUsersSelector' 
 function allUsersSelectorAdd(value) {
-
     for (const element of value) {
-
         if (document.querySelector("#allUsersSelector option[value='" + element + "']")) return;
-
         let newOption = document.createElement("option");
         newOption.value = element;
         newOption.innerHTML = element;
@@ -56,10 +52,6 @@ chatMessageInput.onkeyup = function (e) {
 chatMessageSend.onclick = function () {
     if (chatMessageInput.value.length === 0) return;
     // Отправка сообщения
-    console.log('Room.js Отправка сообщения: ' + JSON.stringify({
-        "message": chatMessageInput.value,
-    }));
-
     chatSocket.send(JSON.stringify({
         "message": chatMessageInput.value,
     }));
@@ -72,7 +64,7 @@ chatUserSelectorAdd.focus();
 
 // Пользователи на добавление в группу 
 chatUserSelectorAdd.onclick = function () {
-    console.log('Add new users to the room');
+    // console.log('Add new users to the room');
     var selected = [];
     for (var option of document.getElementById('allUsersSelector').options) {
         if (option.selected) {
@@ -101,15 +93,13 @@ chatUserSelectorRemove.onclick = function () {
     }));
 };
 
-
 let chatSocket = null;
 
 function connect() {
     chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName + "/");
 
     chatSocket.onopen = function (e) {
-        console.log("Successfully connected to the WebSocket.");
-    }
+        console.log("Successfully connected to the WebSocket.");}
 
     chatSocket.onclose = function (e) {
         console.log("WebSocket connection closed unexpectedly. Trying to reconnect in 2s...");
@@ -127,6 +117,7 @@ function connect() {
                 chatLog.value += data.user + ": " + data.message + "\n";
                 break;
             case "user_list":
+                // Список контактов
                 for (let i = 0; i < data.users.length; i++) {
                     onlineUsersSelectorAdd(data.users[i]);
                 }
@@ -148,9 +139,11 @@ function connect() {
                 chatLog.value += "PM to " + data.target + ": " + data.message + "\n";
                 break;
             case "private_quit":
+                // Пользователя удалили, выход из комнаты
                 console.log('private quit');
                 window.location.pathname = "chat/";
             case "user_update":
+                // Обновляем участников комнаты после изменений
                 clear_onlineUsersSelectorAdd();
 
                 for (let i = 0; i < data.users.length; i++) {
@@ -163,15 +156,12 @@ function connect() {
                 break;
         }
 
-        console.log("Current Scroll Height: " + chatLog.scrollHeight)
         var chatEm = convertEm(1.5);
-        console.log(chatEm);
 
         // scroll 'chatLog' to the bottom
         if (chatLog.scrollHeight / chatEm >= 14) {
             chatScroll.textContent = 100;
         };
-
     };
 
     chatSocket.onerror = function (err) {
@@ -207,10 +197,12 @@ function getElementFontSize(context) {
     );
 }
 
+// Convert Rem CSS to px
 function convertRem(value) {
     return convertEm(value);
 }
 
+// Convert Em CSS to px 
 function convertEm(value, context) {
     return value * getElementFontSize(context);
 }

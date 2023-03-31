@@ -96,23 +96,28 @@ class ChatConsumer(WebsocketConsumer):
                     'user': self.user.username,
                 }
             )
+            # Update status on/off
             self.user_save_status_online(self.user, 'offline')
-
+        
     def receive(self, text_data=None, bytes_data=None):
 
         text_data_json = json.loads(text_data)
 
+        # Опеределение типа сообщения
         if participantes := text_data_json.get('participantes'):
             if user_add_room := participantes.get('userAddRoom'):
+                # добавление в комнату
                 for user_name in user_add_room:
                     u1 = User.objects.get(username=user_name)
                     self.room.participante.add(u1)
                     self.room.save()
 
+                    # Update status on/off
                     self.user_save_status_online(user_name, 'offline')
                     logging.warning('Users add to room: ' + user_name)
 
             if user_remove_room := participantes.get('userRemoveRoom'):
+                # Удаление из комнаты
                 for user_name in user_remove_room:
                     u1 = User.objects.get(username=user_name)
 
@@ -120,9 +125,9 @@ class ChatConsumer(WebsocketConsumer):
                         self.room.participante.remove(u1)
                         self.room.save()
 
-                        self.user_save_status_online(user_name, 'offline')
                         logging.warning('Users remove from room: ' + user_name)
 
+                        # Отправляем клиенту команду на выход из комнаты
                         async_to_sync(self.channel_layer.group_send)(
                             f'inbox_{user_name}',
                             {
@@ -132,6 +137,7 @@ class ChatConsumer(WebsocketConsumer):
                             }
                         )
 
+                        # Пишем в чат сообщение об удалении из комнаты
                         async_to_sync(self.channel_layer.group_send)(
                             self.room_group_name,
                             {
@@ -210,7 +216,7 @@ class ChatConsumer(WebsocketConsumer):
                                    room=self.room, content=message)
 
     def user_save_status_online(self, user_name, status):
-
+        # Update status on/off
         r1=Room.objects.get(name=self.room_name)
         u1=User.objects.get(username=user_name)
         super_part=OnlineParticipanteRoom.objects.create(
@@ -221,7 +227,6 @@ class ChatConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps(event))
 
     def user_join(self, event):
-        logging.warning('Consumers.py user_join: ' + json.dumps(event))
         self.send(text_data=json.dumps(event))
 
     def user_leave(self, event):
@@ -234,7 +239,9 @@ class ChatConsumer(WebsocketConsumer):
         self.send(text_data=json.dumps(event))
 
     def user_update(self, event):
+        # Отправка команды обновления списка участников
         self.send(text_data=json.dumps(event))
 
     def private_quit(self, event):
+        # Отправка команды клиенту на выход из комнаты
         self.send(text_data=json.dumps(event))
