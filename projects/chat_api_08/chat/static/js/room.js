@@ -9,7 +9,8 @@ let onlineUsersSelector = document.querySelector("#onlineUsersSelector");
 
 let allUsersSelector = document.querySelector("#allUsersSelector");  // Список пользователей
 let chatUserSelectorAdd = document.querySelector("#userAddRoom");
-let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");  
+let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");
+let chatScroll = document.querySelector("#chatScroll");
 
 // adds a new option to 'onlineUsersSelector'
 function onlineUsersSelectorAdd(value) {
@@ -33,7 +34,7 @@ function allUsersSelectorAdd(value) {
     for (const element of value) {
 
         if (document.querySelector("#allUsersSelector option[value='" + element + "']")) return;
-        
+
         let newOption = document.createElement("option");
         newOption.value = element;
         newOption.innerHTML = element;
@@ -79,14 +80,13 @@ chatUserSelectorAdd.focus();
 chatUserSelectorAdd.onclick = function () {
     console.log('Add new users to the room');
     var selected = [];
-    for (var option of document.getElementById('allUsersSelector').options)
-    {
+    for (var option of document.getElementById('allUsersSelector').options) {
         if (option.selected) {
             selected.push(option.value);
         }
     }
     chatSocket.send(JSON.stringify({
-        "participantes": {'userAddRoom': selected},
+        "participantes": { 'userAddRoom': selected },
     }));
 };
 
@@ -97,14 +97,13 @@ chatUserSelectorRemove.focus();
 chatUserSelectorRemove.onclick = function () {
     console.log('Delete users into to the room');
     var selected = [];
-    for (var option of document.getElementById('allUsersSelector').options)
-    {
+    for (var option of document.getElementById('allUsersSelector').options) {
         if (option.selected) {
             selected.push(option.value);
         }
     }
     chatSocket.send(JSON.stringify({
-        "participantes": {'userRemoveRoom': selected},
+        "participantes": { 'userRemoveRoom': selected },
     }));
 };
 
@@ -139,7 +138,7 @@ function connect() {
                 }
                 break;
             case "user_join":
-                
+
                 // Присоединение пользователя в комнату
                 chatLog.value += data.user + " joined the room.\n";
                 onlineUsersSelectorAdd(data.user);
@@ -161,8 +160,15 @@ function connect() {
                 break;
         }
 
+        console.log("Current Scroll Height: " + chatLog.scrollHeight)
+        var chatEm = convertEm(1.5);
+        console.log(chatEm);
+
         // scroll 'chatLog' to the bottom
-        chatLog.scrollTop = chatLog.scrollHeight;
+        if (chatLog.scrollHeight / chatEm >= 14) {
+            chatScroll.textContent = 100;
+        };
+
     };
 
     chatSocket.onerror = function (err) {
@@ -178,3 +184,30 @@ onlineUsersSelector.onchange = function () {
     onlineUsersSelector.value = null;
     chatMessageInput.focus();
 };
+
+// Scroll textArea
+chatScroll.onclick = function () {
+    chatLog.scrollTop = chatLog.scrollHeight;
+};
+
+// Converter Em and Rem
+function getElementFontSize(context) {
+    // Returns a number
+    return parseFloat(
+        // of the computed font-size, so in px
+        getComputedStyle(
+            // for the given context
+            context ||
+            // or the root <html> element
+            document.documentElement
+        ).fontSize
+    );
+}
+
+function convertRem(value) {
+    return convertEm(value);
+}
+
+function convertEm(value, context) {
+    return value * getElementFontSize(context);
+}
