@@ -42,12 +42,6 @@ function allUsersSelectorAdd(value) {
     }
 }
 
-// removes an option from 'allUsersSelector' Удаление пользователей из группы
-// function allUsersSelectorRemove(value) {
-//     let oldOption = document.querySelector("#allUsersSelector option[value='" + value + "']");
-//     if (oldOption !== null) oldOption.remove();
-// }
-
 // focus 'chatMessageInput' when user opens the page
 chatMessageInput.focus();
 
@@ -153,8 +147,10 @@ function connect() {
             case "private_message_delivered":
                 chatLog.value += "PM to " + data.target + ": " + data.message + "\n";
                 break;
+            case "private_quit":
+                console.log('private quit');
+                window.location.pathname = "chat/";
             case "user_update":
-                
                 clear_onlineUsersSelectorAdd();
 
                 for (let i = 0; i < data.users.length; i++) {

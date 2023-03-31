@@ -10,6 +10,7 @@ from .models import Room, Message, User, OnlineParticipanteRoom
 import logging
 logger = logging.getLogger(__name__)
 
+
 class ChatConsumer(WebsocketConsumer):
 
     def __init__(self, *args, **kwargs):
@@ -18,7 +19,7 @@ class ChatConsumer(WebsocketConsumer):
         self.room_group_name = None
         self.room = None
         self.user = None  # new
-        self.user_id = None # Sitala
+        self.user_id = None  # Sitala
         self.user_inbox = None  # new
 
     def connect(self):
@@ -61,16 +62,14 @@ class ChatConsumer(WebsocketConsumer):
                 {
                     'type': 'user_join',
                     'user': self.user.username,  # Имя user присоединяющегося
-                    'user_list': [b.username for b in user_obg_list],  # Список пользователей
+                    # Список пользователей
+                    'user_list': [b.username for b in user_obg_list],
                     'username_admin': '',
                 }
             )
             logging.warning('paticipante add to room' + str(self.user))
-            r1 = Room.objects.get(name=self.room_name)
-            u1 = User.objects.get(username=self.user)
-            super_part = OnlineParticipanteRoom.objects.create(user=u1, room=r1, user_status='off')
-            super_part.save()
-            
+            self.user_save_status_online(self.user, 'on')
+
             self.room.participante.add(self.user)
             self.room.save()
 
@@ -97,33 +96,56 @@ class ChatConsumer(WebsocketConsumer):
                     'user': self.user.username,
                 }
             )
-            # self.room.participante.remove(self.user)
+            self.user_save_status_online(self.user, 'offline')
 
     def receive(self, text_data=None, bytes_data=None):
+
         text_data_json = json.loads(text_data)
-        
-        logging.warning(text_data_json.get('participantes'))
-        
+
         if participantes := text_data_json.get('participantes'):
-            logging.warning('Получен список для изменения списка участников')
             if user_add_room := participantes.get('userAddRoom'):
                 for user_name in user_add_room:
                     u1 = User.objects.get(username=user_name)
                     self.room.participante.add(u1)
                     self.room.save()
-                    logging.warning('Users add to room: ' + user_name) 
+
+                    self.user_save_status_online(user_name, 'offline')
+                    logging.warning('Users add to room: ' + user_name)
+
             if user_remove_room := participantes.get('userRemoveRoom'):
                 for user_name in user_remove_room:
                     u1 = User.objects.get(username=user_name)
+
                     if not self.user.username == user_name:
                         self.room.participante.remove(u1)
                         self.room.save()
+
+                        self.user_save_status_online(user_name, 'offline')
                         logging.warning('Users remove from room: ' + user_name)
+
+                        async_to_sync(self.channel_layer.group_send)(
+                            f'inbox_{user_name}',
+                            {
+                                'type': 'private_quit',
+                                'user': user_name,
+                                'message': user_name
+                            }
+                        )
+
+                        async_to_sync(self.channel_layer.group_send)(
+                            self.room_group_name,
+                            {
+                                'type': 'chat_message',
+                                'user': self.user.username,  # new
+                                'message': f'{user_name} was Delete from this room...',
+                            }
+                        )
+
                     else:
-                        logging.warning('Users Not remove from room: ' + user_name)
-                        
-            # send chat message event to the room
-            logging.warning('Room group name: ' + self.room_group_name)
+                        logging.warning(
+                            'Users Not remove from room: ' + user_name)
+
+            # send chat message event Update to the room
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
@@ -131,21 +153,21 @@ class ChatConsumer(WebsocketConsumer):
                     'users': [user.username for user in self.room.participante.all()],
                 }
             )
-
             return
-            
+
         if message := text_data_json.get('message'):
 
-            logger.warning('Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
+            logger.warning(
+                'Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
 
             if not self.user.is_authenticated:  # new
                 return                          # new
 
             # -------------------- new --------------------
             if message.startswith('/pm '):
-                split = message.split(' ', 2)
-                target = split[1]
-                target_msg = split[2]
+                split=message.split(' ', 2)
+                target=split[1]
+                target_msg=split[2]
 
                 # send private message to the target
                 async_to_sync(self.channel_layer.group_send)(
@@ -163,12 +185,12 @@ class ChatConsumer(WebsocketConsumer):
                     'message': target_msg,
                 }))
 
-                user_destination = User.objects.get(username=target)
+                user_destination=User.objects.get(username=target)
 
                 # Сохраняем запись, private
-                Message.objects.create(user=self.user, recipient=user_destination, 
-                                        status_text='private', 
-                                        room=self.room, content=message)
+                Message.objects.create(user=self.user, recipient=user_destination,
+                                       status_text='private',
+                                       room=self.room, content=message)
 
                 return
             # ---------------- end of new ----------------
@@ -183,30 +205,36 @@ class ChatConsumer(WebsocketConsumer):
                 }
             )
             # Сохраняем запись, public
-            Message.objects.create(user=self.user, recipient=self.user, 
-                                        status_text='public', 
-                                        room=self.room, content=message)
+            Message.objects.create(user=self.user, recipient=self.user,
+                                   status_text='public',
+                                   room=self.room, content=message)
+
+    def user_save_status_online(self, user_name, status):
+
+        r1=Room.objects.get(name=self.room_name)
+        u1=User.objects.get(username=user_name)
+        super_part=OnlineParticipanteRoom.objects.create(
+                            user=u1, room=r1, user_status=status)
+        super_part.save()
 
     def chat_message(self, event):
         self.send(text_data=json.dumps(event))
 
     def user_join(self, event):
-
         logging.warning('Consumers.py user_join: ' + json.dumps(event))
-        
         self.send(text_data=json.dumps(event))
 
     def user_leave(self, event):
         self.send(text_data=json.dumps(event))
-    
+
     def private_message(self, event):
         self.send(text_data=json.dumps(event))
 
     def private_message_delivered(self, event):
         self.send(text_data=json.dumps(event))
-    
+
     def user_update(self, event):
         self.send(text_data=json.dumps(event))
 
-
-
+    def private_quit(self, event):
+        self.send(text_data=json.dumps(event))
