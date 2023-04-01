@@ -13,12 +13,19 @@ let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");
 let chatScroll = document.querySelector("#chatScroll");
 
 // adds a new option to 'onlineUsersSelector'
-function onlineUsersSelectorAdd(value) {
+function onlineUsersSelectorAdd(value, status = 'offline') {
+    
     if (document.querySelector("#onlineUsersSelector option[value='" + value + "']")) return;
+    
     let newOption = document.createElement("option");
     newOption.value = value;
-    newOption.setAttribute('class', "fa fa-circle-o"); // статус по умолчанию не в сети, цвет серый в css
-    newOption.innerHTML = " " + value;
+    if (status == 'offline'){
+        newOption.setAttribute('class', "fa fa-circle-o");
+    }else{
+        newOption.setAttribute('class', "fa fa-check-square");
+        newOption.style.color = "green";
+    }
+    newOption.innerHTML = '&nbsp' + value;
     onlineUsersSelector.appendChild(newOption);
 }
 
@@ -132,23 +139,40 @@ function connect() {
                 chatLog.value += data.user + ": " + data.message + "\n";
                 break;
             case "user_list":
-                // Список контактов
-                for (let i = 0; i < data.users.length; i++) {
-                    onlineUsersSelectorAdd(data.users[i]);
-                }
+                // users list and status
+                console.log('user_list');
+                clear_onlineUsersSelectorAdd();
+                for (const key of Object.keys(data.users)) {
+                    console.log(key + ":" + data.users[key]);
+                    onlineUsersSelectorAdd(key, data.users[key]);
+                    };
+
                 break;
             case "user_join":
                 // Присоединение пользователя в комнату
                 chatLog.value += data.user + " joined the room.\n";
                 allUsersSelectorAdd(data.user_list);
 
-                onlineUsersSelectorAdd(data.user);
-                onlineUsersSelectorChangeStatus(data.user);
+                // onlineUsersSelectorAdd(data.user);
+                // onlineUsersSelectorChangeStatus(data.user);
+                
+                // clear_onlineUsersSelectorAdd();
+                // for (const key of Object.keys(data.users)) {
+                //     console.log(key + ":" + data.users[key]);
+                //     onlineUsersSelectorAdd(key, data.users[key]);
+                //     };
+                
                 break;
             case "user_leave":
                 chatLog.value += data.user + " left the room.\n";
                 // onlineUsersSelectorRemove(data.user);
-                offlineUsersSelectorChangeStatus(data.user);
+                // offlineUsersSelectorChangeStatus(data.user);
+                clear_onlineUsersSelectorAdd();
+                for (const key of Object.keys(data.users)) {
+                    console.log(key + ":" + data.users[key]);
+                    onlineUsersSelectorAdd(key, data.users[key]);
+                    };
+
                 break;
             case "private_message":
                 chatLog.value += "PM from " + data.user + ": " + data.message + "\n";
@@ -165,10 +189,11 @@ function connect() {
                 // Обновляем участников комнаты после изменений
                 clear_onlineUsersSelectorAdd();
 
-                for (let i = 0; i < data.users.length; i++) {
-                    onlineUsersSelectorAdd(data.users[i]);
-                    console.log('starting user update: ' + data.users[i]);
-                }
+                for (const key of Object.keys(data.users)) {
+                    console.log(key + ":" + data.users[key]);
+                    onlineUsersSelectorAdd(key, data.users[key]);
+                    };
+
                 break;
             case "user_status":
                 break;
@@ -178,7 +203,6 @@ function connect() {
         }
 
         var chatEm = convertEm(1.5);
-
         // scroll 'chatLog' to the bottom
         if (chatLog.scrollHeight / chatEm >= 14) {
             chatScroll.textContent = 100;

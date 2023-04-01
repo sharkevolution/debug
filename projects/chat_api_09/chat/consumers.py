@@ -47,31 +47,33 @@ class ChatConsumer(WebsocketConsumer):
             self.channel_name,
         )
 
-        # send the user list to the newly joined user
-        self.send(json.dumps({
-            'type': 'user_list',
-            'users': [user.username for user in self.room.participante.all()],
-        }))
-
         if self.user.is_authenticated:
             # send the join event to the room
             user_obg_list = User.objects.all()
+
+            logging.warning('paticipante add to room' + str(self.user))
+            self.user_save_status_online(self.user, 'on')
+            self.room.participante.add(self.user)
+            self.room.save()
 
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     'type': 'user_join',
                     'user': self.user.username,  # Имя user присоединяющегося
-                    # Список пользователей
-                    'user_list': [b.username for b in user_obg_list],
+                    'user_list': [b.username for b in user_obg_list],  # Список всех пользователей
                     'username_admin': '',
                 }
             )
-            logging.warning('paticipante add to room' + str(self.user))
-            self.user_save_status_online(self.user, 'on')
 
-            self.room.participante.add(self.user)
-            self.room.save()
+            current_users_status = self.get_last_status_users() 
+            async_to_sync(self.channel_layer.group_send)(
+                self.room_group_name,
+                {
+                'type': 'user_list',
+                'users': current_users_status,
+                }
+            )
 
     def disconnect(self, close_code):
         async_to_sync(self.channel_layer.group_discard)(
@@ -89,15 +91,19 @@ class ChatConsumer(WebsocketConsumer):
 
         if self.user.is_authenticated:
             # send the leave event to the room
+            
+            # Update status on/off
+            self.user_save_status_online(self.user, 'offline')
+            
+            current_users_status = self.get_last_status_users() 
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     'type': 'user_leave',
                     'user': self.user.username,
+                    'users': current_users_status,   #### Исправить статусы и название развести
                 }
             )
-            # Update status on/off
-            self.user_save_status_online(self.user, 'offline')
         
     def receive(self, text_data=None, bytes_data=None):
 
@@ -152,11 +158,14 @@ class ChatConsumer(WebsocketConsumer):
                             'Users Not remove from room: ' + user_name)
 
             # send chat message event Update to the room
+            current_users_status = self.get_last_status_users() 
+
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     'type': 'user_update',
-                    'users': [user.username for user in self.room.participante.all()],
+                    'users': current_users_status,
+                    # 'users': [user.username for user in self.room.participante.all()],
                 }
             )
             return
@@ -215,6 +224,22 @@ class ChatConsumer(WebsocketConsumer):
                                    status_text='public',
                                    room=self.room, content=message)
 
+    def get_last_status_users(self):
+        # Get last status user (on/offline)
+        current_users_status = {}
+        user_room_list = self.room.participante.all()
+        for b in user_room_list:
+            user_history=OnlineParticipanteRoom.objects.filter(user=b.id, 
+                                                                    room=self.room).order_by("timestamp")
+            if h:= user_history.last():
+                curstat = h.user_status
+            else:
+                curstat = 'offline'
+            
+            current_users_status[b.username] = curstat
+            # logging.warning('user_: ' + str(b.username) + ' status: ' + curstat)
+        return current_users_status
+
     def user_save_status_online(self, user_name, status):
         # Update status on/off
         r1=Room.objects.get(name=self.room_name)
@@ -224,6 +249,9 @@ class ChatConsumer(WebsocketConsumer):
         super_part.save()
 
     def chat_message(self, event):
+        self.send(text_data=json.dumps(event))
+
+    def user_list(self, event):
         self.send(text_data=json.dumps(event))
 
     def user_join(self, event):
