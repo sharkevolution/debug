@@ -17,7 +17,8 @@ function onlineUsersSelectorAdd(value) {
     if (document.querySelector("#onlineUsersSelector option[value='" + value + "']")) return;
     let newOption = document.createElement("option");
     newOption.value = value;
-    newOption.innerHTML = value;
+    newOption.setAttribute('class', "fa fa-circle-o"); // статус по умолчанию не в сети, цвет серый в css
+    newOption.innerHTML = " " + value;
     onlineUsersSelector.appendChild(newOption);
 }
 
@@ -25,6 +26,20 @@ function onlineUsersSelectorAdd(value) {
 function onlineUsersSelectorRemove(value) {
     let oldOption = document.querySelector("#onlineUsersSelector option[value='" + value + "']");
     if (oldOption !== null) oldOption.remove();
+}
+
+// update status user to offline 'offlineUsersSelectorChangeStatus'
+function offlineUsersSelectorChangeStatus(value) {
+    let statusOption = document.querySelector("#onlineUsersSelector option[value='" + value + "']");
+    statusOption.setAttribute('class', "fa fa-circle-o");
+    statusOption.style.color = "grey";
+}
+
+// update status user to online 'onlineUsersSelectorChangeStatus'
+function onlineUsersSelectorChangeStatus(value) {
+    let statusOption = document.querySelector("#onlineUsersSelector option[value='" + value + "']");
+    statusOption.setAttribute('class', "fa fa-check-square");
+    statusOption.style.color = "green";
 }
 
 // Добавление списка всех пользователей, adds a new option to 'allUsersSelector' 
@@ -125,12 +140,15 @@ function connect() {
             case "user_join":
                 // Присоединение пользователя в комнату
                 chatLog.value += data.user + " joined the room.\n";
-                onlineUsersSelectorAdd(data.user);
                 allUsersSelectorAdd(data.user_list);
+
+                onlineUsersSelectorAdd(data.user);
+                onlineUsersSelectorChangeStatus(data.user);
                 break;
             case "user_leave":
                 chatLog.value += data.user + " left the room.\n";
-                onlineUsersSelectorRemove(data.user);
+                // onlineUsersSelectorRemove(data.user);
+                offlineUsersSelectorChangeStatus(data.user);
                 break;
             case "private_message":
                 chatLog.value += "PM from " + data.user + ": " + data.message + "\n";
@@ -142,6 +160,7 @@ function connect() {
                 // Пользователя удалили, выход из комнаты
                 console.log('private quit');
                 window.location.pathname = "chat/";
+                break;
             case "user_update":
                 // Обновляем участников комнаты после изменений
                 clear_onlineUsersSelectorAdd();
@@ -150,6 +169,8 @@ function connect() {
                     onlineUsersSelectorAdd(data.users[i]);
                     console.log('starting user update: ' + data.users[i]);
                 }
+                break;
+            case "user_status":
                 break;
             default:
                 console.error("Unknown message type!");

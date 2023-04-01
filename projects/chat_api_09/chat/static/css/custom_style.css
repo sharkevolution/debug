@@ -45,3 +45,10 @@
     background-color: bisque !important;
     border-color: burlywood !important;
 }
+
+#onlineUsersSelector option.fa {
+    display: block;
+    font-family: 'FontAwesome', 'sans-serif';
+    font-size: 17px;
+    color: grey;
+}
