@@ -1,6 +1,7 @@
 console.log("Sanity check from room.js.");
 
 const roomName = JSON.parse(document.getElementById('roomName').textContent);
+let echoUser = '';
 
 let chatLog = document.querySelector("#chatLog");
 let chatMessageInput = document.querySelector("#chatMessageInput");
@@ -12,16 +13,18 @@ let chatUserSelectorAdd = document.querySelector("#userAddRoom");
 let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");
 let chatScroll = document.querySelector("#chatScroll");
 
+let messageList = document.querySelector('#messages');
+
 // adds a new option to 'onlineUsersSelector'
 function onlineUsersSelectorAdd(value, status = 'offline') {
-    
+
     if (document.querySelector("#onlineUsersSelector option[value='" + value + "']")) return;
-    
+
     let newOption = document.createElement("option");
     newOption.value = value;
-    if (status == 'offline'){
+    if (status == 'offline') {
         newOption.setAttribute('class', "fa fa-circle-o");
-    }else{
+    } else {
         newOption.setAttribute('class', "fa fa-check-square");
         newOption.style.color = "green";
     }
@@ -80,7 +83,6 @@ chatMessageSend.onclick = function () {
     chatMessageInput.value = "";
 };
 
-
 // focus 'userAddRoom' when user opens the page
 chatUserSelectorAdd.focus();
 
@@ -121,7 +123,9 @@ function connect() {
     chatSocket = new WebSocket("ws://" + window.location.host + "/ws/chat/" + roomName + "/");
 
     chatSocket.onopen = function (e) {
-        console.log("Successfully connected to the WebSocket.");}
+        console.log("Successfully connected to the WebSocket.");
+        chatEchoSend();
+    }
 
     chatSocket.onclose = function (e) {
         console.log("WebSocket connection closed unexpectedly. Trying to reconnect in 2s...");
@@ -136,7 +140,8 @@ function connect() {
 
         switch (data.type) {
             case "chat_message":
-                chatLog.value += data.user + ": " + data.message + "\n";
+                // chatLog.value += data.user + ": " + data.message + "\n";
+                drawMessage(data);
                 break;
             case "user_list":
                 // participantes list and status
@@ -145,14 +150,13 @@ function connect() {
                 for (const key of Object.keys(data.participantes)) {
                     // console.log(key + ":" + data.participantes[key]);
                     onlineUsersSelectorAdd(key, data.participantes[key]);
-                    };
-
+                };
                 break;
             case "user_join":
                 // Присоединение пользователя в комнату
-                chatLog.value += data.user + " joined the room.\n";
+                // chatLog.value += data.user + " joined the room.\n";
                 allUsersSelectorAdd(data.contacts);
-                
+
                 break;
             case "user_leave":
                 chatLog.value += data.user + " left the room.\n";
@@ -162,8 +166,7 @@ function connect() {
                 for (const key of Object.keys(data.participantes)) {
                     console.log(key + ":" + data.participantes[key]);
                     onlineUsersSelectorAdd(key, data.participantes[key]);
-                    };
-
+                };
                 break;
             case "private_message":
                 chatLog.value += "PM from " + data.user + ": " + data.message + "\n";
@@ -173,7 +176,7 @@ function connect() {
                 break;
             case "private_quit":
                 // Пользователя удалили, выход из комнаты
-                if (data.room == roomName){window.location.pathname = "chat/"};
+                if (data.room == roomName) { window.location.pathname = "chat/" };
                 break;
             case "user_update":
                 // Обновляем участников комнаты после изменений
@@ -182,21 +185,22 @@ function connect() {
                 for (const key of Object.keys(data.participantes)) {
                     console.log(key + ":" + data.participantes[key]);
                     onlineUsersSelectorAdd(key, data.participantes[key]);
-                    };
-
+                };
                 break;
-            case "user_status":
+            case "user_echo":
+                echoUser = data.user;
                 break;
             default:
                 console.error("Unknown message type!");
                 break;
         }
 
-        var chatEm = convertEm(1.5);
+        // var chatEm = convertEm(1.5);
         // scroll 'chatLog' to the bottom
-        if (chatLog.scrollHeight / chatEm >= 14) {
-            chatScroll.textContent = 100;
-        };
+        // if (chatLog.scrollHeight / chatEm >= 14) {
+        //     chatScroll.textContent = 100;
+        // };
+
     };
 
     chatSocket.onerror = function (err) {
@@ -205,7 +209,9 @@ function connect() {
         chatSocket.close();
     }
 }
+// ****************
 connect();
+// ****************
 
 onlineUsersSelector.onchange = function () {
     chatMessageInput.value = "/pm " + onlineUsersSelector.value + " ";
@@ -243,10 +249,48 @@ function convertEm(value, context) {
 }
 
 // Clear onlineUsersSelectorAdd
-function clear_onlineUsersSelectorAdd(){
+function clear_onlineUsersSelectorAdd() {
     var select = document.getElementById("onlineUsersSelector"),
         length = select.options.length;
-    while(length--){
-      select.remove(length);
+    while (length--) {
+        select.remove(length);
     }
-  }
+}
+
+function drawMessage(data) {
+    let position = 'left';
+    if (data.user === echoUser) position = 'right';
+    const messageItem = `
+            <li class="message ${position}">
+                <div class="avatar">${data.user}</div>
+                    <div class="text_wrapper">
+                        <div class="text">${data.message}<br>
+                    </div>
+                </div>
+            </li>`;
+    messageList.innerHTML += messageItem;
+}
+
+// Send echo username
+function chatEchoSend () {
+    chatSocket.send(JSON.stringify({
+        "echo": 'username',
+    }));
+};
+
+
+// function drawMessage(message) {
+//     let position = 'left';
+//     const date = new Date(message.timestamp);
+//     if (message.user === currentUser) position = 'right';
+//     const messageItem = `
+//             <li class="message ${position}">
+//                 <div class="avatar">${message.user}</div>
+//                     <div class="text_wrapper">
+//                         <div class="text">${message.body}<br>
+//                             <span class="small">${date}</span>
+//                     </div>
+//                 </div>
+//             </li>`;
+//     $(messageItem).appendTo('#messages');
+// }

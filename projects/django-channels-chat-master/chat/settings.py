@@ -11,11 +11,13 @@ https://docs.djangoproject.com/en/dev/ref/settings/
 """
 
 import os
+from pathlib import Path
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 from os.path import join
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+BASE_DIR = Path(__file__).resolve().parent.parent
 PROJECT_ROOT = BASE_DIR
 
 # Quick-start development settings - unsuitable for production
@@ -73,19 +75,27 @@ TEMPLATES = [
     },
 ]
 
+ASGI_APPLICATION = 'chat.asgi.application'  # new
 WSGI_APPLICATION = 'chat.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/dev/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'chat',
+#         'USER': 'root',
+#         'PASSWORD': 'root',
+#         'OPTIONS': {
+#         }
+#     }
+# }
+
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'chat',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'OPTIONS': {
-        }
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
@@ -125,13 +135,20 @@ REST_FRAMEWORK = {
 
 MESSAGES_TO_LOAD = 15
 
-# In settings.py
+# # # In settings.py
+# CHANNEL_LAYERS = {
+#     "default": {
+#         "BACKEND": "asgiref.inmemory.ChannelLayer",
+#         "ROUTING": "core.routing.channel_routing",
+#     },
+# }
 CHANNEL_LAYERS = {
-    "default": {
-        "BACKEND": "asgiref.inmemory.ChannelLayer",
-        "ROUTING": "core.routing.channel_routing",
+    'default': {
+        'BACKEND': "channels.layers.InMemoryChannelLayer",
     },
 }
+
+
 # Could be changed to the config below to scale:
 # "BACKEND": "asgi_redis.RedisChannelLayer",
 # "CONFIG": {
@@ -177,12 +194,11 @@ try:
 except ImportError:
     pass
 
-ASGI_APPLICATION = 'chat.routing.application'
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            "hosts": [('127.0.0.1', 6379)],
-        },
-    },
-}
+# CHANNEL_LAYERS = {
+#     'default': {
+#         'BACKEND': 'channels_redis.core.RedisChannelLayer',
+#         'CONFIG': {
+#             "hosts": [('127.0.0.1', 6379)],
+#         },
+#     },
+# }

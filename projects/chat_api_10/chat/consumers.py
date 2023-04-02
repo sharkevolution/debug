@@ -13,15 +13,15 @@ logger = logging.getLogger(__name__)
 
 class ChatConsumer(WebsocketConsumer):
 
-    starting_server = 0  # Первый запуск сервера для 
+    starting_server = 0  # Первый запуск сервера для
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
         self.room_name = None
         self.room_group_name = None
         self.room = None
-        self.user = None 
-        self.user_id = None  
+        self.user = None
+        self.user_id = None
         self.user_inbox = None
 
     def connect(self):
@@ -65,11 +65,12 @@ class ChatConsumer(WebsocketConsumer):
                 {
                     'type': 'user_join',
                     'user': self.user.username,  # Имя user присоединяющегося
-                    'contacts': [b.username for b in user_obg_list],  # Список всех пользователей
+                    # Список всех пользователей
+                    'contacts': [b.username for b in user_obg_list],
                 }
             )
             # send participantes status
-            current_users_status = self.get_last_status_users() 
+            current_users_status = self.get_last_status_users()
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
@@ -92,17 +93,17 @@ class ChatConsumer(WebsocketConsumer):
                 self.channel_name,
             )
             # send the leave event to the room and Update status on/off
-            self.user_save_status_online(self.user, 'offline')        
-            current_users_status = self.get_last_status_users() 
+            self.user_save_status_online(self.user, 'offline')
+            current_users_status = self.get_last_status_users()
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
                     'type': 'user_leave',
                     'user': self.user.username,
-                    'participantes': current_users_status,   #### Исправить статусы и название развести
+                    'participantes': current_users_status,  # Исправить статусы и название развести
                 }
             )
-        
+
     def receive(self, text_data=None, bytes_data=None):
 
         text_data_json = json.loads(text_data)
@@ -117,7 +118,7 @@ class ChatConsumer(WebsocketConsumer):
 
                     # Update status on/off
                     self.user_save_status_online(user_name, 'offline')
-                    logging.warning('Users add to room: ' + user_name)
+                    # logging.warning('Users add to room: ' + user_name)
 
             if user_remove_room := participantes.get('userRemoveRoom'):
                 # Удаление из комнаты
@@ -153,7 +154,7 @@ class ChatConsumer(WebsocketConsumer):
                         pass
 
             # send chat message event Update to the room
-            current_users_status = self.get_last_status_users() 
+            current_users_status = self.get_last_status_users()
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
@@ -165,17 +166,14 @@ class ChatConsumer(WebsocketConsumer):
 
         if message := text_data_json.get('message'):
 
-            logger.warning(
-                'Consumers.py Разбираем сообщение для отправки пользователю: ' + message)
-
             if not self.user.is_authenticated:  # new
                 return                          # new
 
             # -------------------- new --------------------
             if message.startswith('/pm '):
-                split=message.split(' ', 2)
-                target=split[1]
-                target_msg=split[2]
+                split = message.split(' ', 2)
+                target = split[1]
+                target_msg = split[2]
 
                 # send private message to the target
                 async_to_sync(self.channel_layer.group_send)(
@@ -193,7 +191,7 @@ class ChatConsumer(WebsocketConsumer):
                     'message': target_msg,
                 }))
 
-                user_destination=User.objects.get(username=target)
+                user_destination = User.objects.get(username=target)
 
                 # Сохраняем запись, private
                 Message.objects.create(user=self.user, recipient=user_destination,
@@ -217,25 +215,35 @@ class ChatConsumer(WebsocketConsumer):
                                    status_text='public',
                                    room=self.room, content=message)
 
+        if echo := text_data_json.get('echo'):
+            # send private Echo Username to the target
+            async_to_sync(self.channel_layer.group_send)(
+                f'inbox_{self.user.username}',
+                {
+                    'type': 'user_echo',
+                    'user': self.user.username,
+                    }
+            )
+
     def get_last_status_users(self):
-        """ 
+        """
             Get last status user (on/offline)
         """
-        current_users_status = {}
-        user_room_list = self.room.participante.all()
+        current_users_status={}
+        user_room_list=self.room.participante.all()
         for b in user_room_list:
-            user_history=OnlineParticipanteRoom.objects.filter(user=b.id, 
+            user_history=OnlineParticipanteRoom.objects.filter(user=b.id,
                                                                     room=self.room).order_by("timestamp")
-            if h:= user_history.last():
-                curstat = h.user_status
+            if h := user_history.last():
+                curstat=h.user_status
             else:
-                curstat = 'offline'     
-            current_users_status[b.username] = curstat
+                curstat='offline'
+            current_users_status[b.username]=curstat
 
         return current_users_status
 
     def user_save_status_online(self, user_name, status):
-        """ 
+        """
             Update status on/off
         """
         r1=Room.objects.get(name=self.room_name)
@@ -243,18 +251,19 @@ class ChatConsumer(WebsocketConsumer):
         super_part=OnlineParticipanteRoom.objects.create(
                             user=u1, room=r1, user_status=status)
         super_part.save()
-    
+
     def reset_participants_status(self):
         """
             При первом запуске сервера, принудительный сброс статусов участников на offline
         """
-        allRooms = Room.objects.all()
+        allRooms=Room.objects.all()
         for cr in allRooms:
             r1=Room.objects.get(name=cr.name)
-            user_room_list = r1.participante.all()
+            user_room_list=r1.participante.all()
             for u1 in user_room_list:
                 u1=User.objects.get(username=u1.username)
-                super_part=OnlineParticipanteRoom.objects.create(user=u1, room=r1, user_status='offline')
+                super_part=OnlineParticipanteRoom.objects.create(
+                    user=u1, room=r1, user_status='offline')
                 super_part.save()
 
     def get_messages_open_page(self):
@@ -264,6 +273,9 @@ class ChatConsumer(WebsocketConsumer):
         """
         pass
 
+    def user_echo(self, event):
+        # Send echo username
+        self.send(text_data=json.dumps(event))
 
     def chat_message(self, event):
         self.send(text_data=json.dumps(event))

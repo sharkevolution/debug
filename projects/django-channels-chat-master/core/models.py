@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
 from django.db.models import (Model, TextField, DateTimeField, ForeignKey,
                               CASCADE)
+from django.db import models
 
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -12,6 +13,7 @@ class MessageModel(Model):
     the message body.
 
     """
+    id = models.AutoField(primary_key=True)
     user = ForeignKey(User, on_delete=CASCADE, verbose_name='user',
                       related_name='from_user', db_index=True)
     recipient = ForeignKey(User, on_delete=CASCADE, verbose_name='recipient',
