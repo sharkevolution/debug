@@ -48,13 +48,11 @@ class ChatConsumer(WebsocketConsumer):
                 self.user_inbox,
                 self.channel_name,
             )
-
             # join the room group
             async_to_sync(self.channel_layer.group_add)(
                 self.room_group_name,
                 self.channel_name,
             )
-
             logging.warning('paticipante add to room' + str(self.user))
             self.user_save_status_online(self.user, 'on')
             self.room.participante.add(self.user)
@@ -70,7 +68,6 @@ class ChatConsumer(WebsocketConsumer):
                     'contacts': [b.username for b in user_obg_list],  # Список всех пользователей
                 }
             )
-
             # send participantes status
             current_users_status = self.get_last_status_users() 
             async_to_sync(self.channel_layer.group_send)(
@@ -94,7 +91,6 @@ class ChatConsumer(WebsocketConsumer):
                 self.user_inbox,
                 self.channel_name,
             )
-
             # send the leave event to the room and Update status on/off
             self.user_save_status_online(self.user, 'offline')        
             current_users_status = self.get_last_status_users() 
@@ -144,7 +140,6 @@ class ChatConsumer(WebsocketConsumer):
                                 'room': self.room.name
                             }
                         )
-
                         # Пишем в чат сообщение об удалении из комнаты
                         async_to_sync(self.channel_layer.group_send)(
                             self.room_group_name,
@@ -154,7 +149,6 @@ class ChatConsumer(WebsocketConsumer):
                                 'message': f'{user_name} was Delete from this room...',
                             }
                         )
-
                     else:
                         pass
 
@@ -262,6 +256,13 @@ class ChatConsumer(WebsocketConsumer):
                 u1=User.objects.get(username=u1.username)
                 super_part=OnlineParticipanteRoom.objects.create(user=u1, room=r1, user_status='offline')
                 super_part.save()
+
+    def get_messages_open_page(self):
+        """
+            Выборка последних 10 сообщений пользователя при входе в комнату
+            с разделением на прочитанные и не прочитанные
+        """
+        pass
 
 
     def chat_message(self, event):
