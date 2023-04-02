@@ -26,7 +26,6 @@ class Room(models.Model):  # Thread
     name = models.CharField(max_length=128)     
     participante = models.ManyToManyField(to=User, blank=True, related_name='participante_inroom')
     online = models.ManyToManyField(to=User, blank=True, through='OnlineParticipanteRoom')
-    cursor = models.ManyToManyField(to=User, blank=True, through='CursorParticipanteRoom')
     created = models.DateTimeField(auto_now_add=True)
     updated = models.DateTimeField(null=True, blank=True)
     limit_users = models.IntegerField(default=2)
@@ -66,11 +65,11 @@ class OnlineParticipanteRoom(models.Model):
     user_status = models.CharField(max_length=25, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
 
+
 class CursorParticipanteRoom(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
-    room = models.ForeignKey(Room, on_delete=models.CASCADE)
-    cursor_read_message_id = models.IntegerField(default=10)  # Кол-во сообщений с конца
-    timestamp = models.DateTimeField(auto_now_add=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True)
+    room = models.ForeignKey(to=Room, on_delete=models.CASCADE)  # thread
+    cursor_message_id = models.IntegerField(default=0)  # id сообщения
 
 
 class Message(models.Model):

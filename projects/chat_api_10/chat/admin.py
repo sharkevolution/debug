@@ -1,7 +1,7 @@
 # chat/admin.py
 
 from django.contrib import admin
-from .models import Room, Message, TokenUser, OnlineParticipanteRoom
+from .models import Room, Message, TokenUser, OnlineParticipanteRoom, CursorParticipanteRoom
 
 # admin.site.register(Room)
 # admin.site.register(CustomUser)
@@ -34,3 +34,8 @@ class TokenUserAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'user', 'recipient', 'status_text', 'room_name', 'content', 'is_read', 'created')
+    
+    
+@admin.register(CursorParticipanteRoom)
+class CursorAdmin(admin.ModelAdmin):
+    list_display = ('id', 'user', 'room', 'cursor_message_id')
