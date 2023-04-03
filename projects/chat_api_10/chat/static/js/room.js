@@ -340,6 +340,12 @@ messageList.addEventListener("scroll", (event) => {
 const debug = document.querySelector('.debug');
 const displayed = {};
 
+const observer = new IntersectionObserver(scrollTracking, {
+    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+});
+
+let super_box_is_read = [];  // Множество сообщений отмеченных как прочитанно
+
 function scrollTracking(entries) {
     for (const entry of entries) {
         displayed[entry.target.id] = entry.intersectionRatio >= 0.2;
@@ -349,8 +355,35 @@ function scrollTracking(entries) {
         .filter(([id, inViewport]) => inViewport)
         .map(([id, inViewport]) => id)
         .join('\n');
+    
+    let i = 0;
+    let box_status = [];
+    for (const key of Object.keys(displayed)) {
+        if (displayed[key]) {
+            box_status[i] = key;
+            i += 1; 
+        };
+    }
+
+    const set1 = new Set(box_status);
+    const set2 = new Set(super_box_is_read);
+    let different_set = getDifference(set1, set2);
+    let dif = Array.from(different_set);
+    super_box_is_read = super_box_is_read.concat(dif);
+
+    if (dif.length > 0) {
+        // Update base, status messages is_read
+        chatSocket.send(JSON.stringify({
+            "messages_is_read": dif,
+        }));
+        console.log('different set is read: ' + dif);
+    }
 }
 
-const observer = new IntersectionObserver(scrollTracking, {
-    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
-});
+// Difference is_read messages
+function getDifference(setA, setB) {
+    return new Set(
+      [...setA].filter(element => !setB.has(element))
+    );
+  }
+  
