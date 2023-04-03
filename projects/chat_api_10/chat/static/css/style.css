@@ -15,6 +15,7 @@
     clear: both;
     overflow: hidden;
     margin-bottom: 20px;
+    overflow-wrap: break-word;
 }
 
 .messages .message.left .avatar {
