@@ -191,9 +191,8 @@ class ChatConsumer(WebsocketConsumer):
                     'message': target_msg,
                 }))
 
-                user_destination = User.objects.get(username=target)
-
                 # Сохраняем запись, private
+                user_destination = User.objects.get(username=target)
                 Message.objects.create(user=self.user, recipient=user_destination,
                                        status_text='private',
                                        room=self.room, content=message)
@@ -201,6 +200,16 @@ class ChatConsumer(WebsocketConsumer):
                 return
             # ---------------- end of new ----------------
 
+            # Сохраняем запись, public
+            Message.objects.create(user=self.user, recipient=self.user,
+                                   status_text='public',
+                                   room=self.room, content=message)
+
+
+            once_text = Message.objects.filter(user=self.user, recipient=self.user, status_text='public', 
+                                            room=self.room, content=message).order_by("created")
+            last_text = once_text.last()
+            logging.warning(last_text.id)
             # send chat message event to the room
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
@@ -208,12 +217,9 @@ class ChatConsumer(WebsocketConsumer):
                     'type': 'chat_message',
                     'user': self.user.username,  # new
                     'message': message,
+                    'message_id': last_text.id,
                 }
             )
-            # Сохраняем запись, public
-            Message.objects.create(user=self.user, recipient=self.user,
-                                   status_text='public',
-                                   room=self.room, content=message)
 
         if echo := text_data_json.get('echo'):
             # send private Echo Username to the target

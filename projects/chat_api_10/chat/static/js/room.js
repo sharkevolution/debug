@@ -118,6 +118,13 @@ chatUserSelectorRemove.onclick = function () {
     }));
 };
 
+// Send echo username
+function chatEchoSend() {
+    chatSocket.send(JSON.stringify({
+        "echo": 'username',
+    }));
+};
+
 let chatSocket = null;
 
 function connect() {
@@ -157,10 +164,9 @@ function connect() {
                 // Присоединение пользователя в комнату
                 // chatLog.value += data.user + " joined the room.\n";
                 allUsersSelectorAdd(data.contacts);
-
                 break;
             case "user_leave":
-                chatLog.value += data.user + " left the room.\n";
+                // chatLog.value += data.user + " left the room.\n";
                 // onlineUsersSelectorRemove(data.user);
 
                 clear_onlineUsersSelectorAdd();
@@ -258,14 +264,12 @@ function clear_onlineUsersSelectorAdd() {
     }
 }
 
-let box_iter = 0
-
 function drawMessage(data) {
+    // Add message to chat
     let position = 'left';
     if (data.user === echoUser) position = 'right';
-    box_iter += 1
     const messageItem = `
-            <li class="message ${position} box" id="box-${box_iter}">
+            <li class="message ${position} box" id="box-${data.message_id}">
                 <div class="avatar">${data.user}</div>
                     <div class="text_wrapper">
                         <div class="text">${data.message}<br>
@@ -274,13 +278,6 @@ function drawMessage(data) {
             </li>`;
     messageList.innerHTML += messageItem;
 }
-
-// Send echo username
-function chatEchoSend() {
-    chatSocket.send(JSON.stringify({
-        "echo": 'username',
-    }));
-};
 
 chatInsertLi.onclick = function () {
     // Добавляем элементы в начало
@@ -305,12 +302,32 @@ var loadMore = function () {
     }
 }
 
-// Event Scroll Chat
+
+// handle event wheel up in the chat
+messageList.addEventListener('wheel', function (event) {
+    if (event.deltaY < 0) {
+        var ul = document.getElementById("messages");
+        var li0 = ul.children[0];
+        if (li0) {
+            li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
+        };
+            console.log('scrolling up');
+    }
+})
+
+
+// handle event Scroll Chat
 messageList.addEventListener("scroll", (event) => {
     output.textContent = `scrollTop: ${messageList.scrollTop}`;
     if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
         loadMore();
     }
+    if (messageList.scrollTop <= 0) {
+        var ul = document.getElementById("messages");
+        var li5 = ul.children[0];
+        li5.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
+    }
+
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
     boxes.forEach(element => observer.observe(element));
