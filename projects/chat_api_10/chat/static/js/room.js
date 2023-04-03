@@ -14,6 +14,7 @@ let chatUserSelectorRemove = document.querySelector("#userRemoveRoom");
 let chatScroll = document.querySelector("#chatScroll");
 
 let messageList = document.querySelector('#messages');
+let chatInsertLi = document.querySelector('#chatTest');
 
 // adds a new option to 'onlineUsersSelector'
 function onlineUsersSelectorAdd(value, status = 'offline') {
@@ -277,6 +278,39 @@ function chatEchoSend () {
         "echo": 'username',
     }));
 };
+
+chatInsertLi.onclick = function () {
+    // Добавляем элементы в начало
+    var ul = document.getElementById("messages");
+    var li5 = ul.children[0];
+  
+    li5.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
+
+}
+
+// const scroller = document.querySelector("#scroller");
+const output = document.querySelector("#output");
+var ul = document.getElementById("messages");
+var nextItem = 1;
+
+var loadMore = function() {
+  for (var i = 0; i < 5; i++) {
+    var item = document.createElement('li');
+    item.innerText = 'Item ' + nextItem++;
+    messageList.appendChild(item);
+  }
+}
+
+
+messageList.addEventListener("scroll", (event) => {
+  output.textContent = `scrollTop: ${messageList.scrollTop}`;
+
+  if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
+        loadMore();
+  }
+
+});
+
 
 
 // function drawMessage(message) {
