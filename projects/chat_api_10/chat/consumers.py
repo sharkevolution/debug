@@ -175,6 +175,17 @@ class ChatConsumer(WebsocketConsumer):
                 target = split[1]
                 target_msg = split[2]
 
+                # Сохраняем запись, private
+                user_destination = User.objects.get(username=target)
+                Message.objects.create(user=self.user, recipient=user_destination,
+                                       status_text='private',
+                                       room=self.room, content=message)
+
+                once_text = Message.objects.filter(user=self.user, recipient=user_destination, status_text='private', 
+                                            room=self.room, content=message).order_by("created")
+                last_text = once_text.last()
+                logging.warning(last_text.id)
+
                 # send private message to the target
                 async_to_sync(self.channel_layer.group_send)(
                     f'inbox_{target}',
@@ -182,20 +193,17 @@ class ChatConsumer(WebsocketConsumer):
                         'type': 'private_message',
                         'user': self.user.username,
                         'message': target_msg,
+                        'message_id': last_text.id,
                     }
                 )
+                
                 # send private message delivered to the user
                 self.send(json.dumps({
                     'type': 'private_message_delivered',
                     'target': target,
                     'message': target_msg,
+                    'message_id': last_text.id,
                 }))
-
-                # Сохраняем запись, private
-                user_destination = User.objects.get(username=target)
-                Message.objects.create(user=self.user, recipient=user_destination,
-                                       status_text='private',
-                                       room=self.room, content=message)
 
                 return
             # ---------------- end of new ----------------
@@ -232,8 +240,30 @@ class ChatConsumer(WebsocketConsumer):
             )
         
         if messages_is_read := text_data_json.get('messages_is_read'):
-            # Get status 'is_read' messages
-            logging.warning(f'messages_is_read: {messages_is_read}')
+            # Get status 'is_read' messages and Update into base
+            for b in messages_is_read:
+                pk = b.split('-')
+                if pk[1].isnumeric():
+                    try:
+                        whois_message = Message.objects.get(id=int(pk[1]))
+                        you_ = self.user.username
+                        from_ = whois_message.user
+                        to_ = whois_message.recipient
+
+                        if not you_ == from_ and you_ == to_:
+                            # частное сообщение
+                            # наблюдатель (you) не равен от кого (from) и (you) равен (to)  
+                            Message.objects.filter(id=int(pk[1])).update(is_read=True)
+                        if from_ == to_:
+                            # Сообщение публичное для группы
+                            pass
+                        
+                        logging.warning(f'You: {self.user.username}: {str(b)}')
+                        logging.warning(f'from_: {from_}')
+                        logging.warning(f'to_: {to_}')
+                    except Exception as ex:
+                        logging.warning(ex)
+                        logging.warning(f'number box: {b}')
 
     def get_last_status_users(self):
         """

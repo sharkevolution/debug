@@ -181,10 +181,12 @@ function connect() {
                 };
                 break;
             case "private_message":
-                chatLog.value += "PM from " + data.user + ": " + data.message + "\n";
+                chatLog_value = "PM from " + data.user + ": " + data.message + "\n";
+                drawMessage(data, chatLog_value);
                 break;
             case "private_message_delivered":
-                chatLog.value += "PM to " + data.target + ": " + data.message + "\n";
+                chatLog_value = "PM to " + data.target + ": " + data.message + "\n";
+                drawMessage(data, chatLog_value);
                 break;
             case "private_quit":
                 // Пользователя удалили, выход из комнаты
@@ -264,15 +266,27 @@ function clear_onlineUsersSelectorAdd() {
     }
 }
 
-function drawMessage(data) {
+/// Дописать правильное расположение от кого/кому лево право (частные сообщения неправильно)
+function drawMessage(data, chatlog_value='') {
     // Add message to chat
     let position = 'left';
-    if (data.user === echoUser) position = 'right';
+    let target_user = data.user; 
+    if (data.user === echoUser) {
+        position = 'right';
+        target_user = echoUser;
+    }
+
+    if (chatlog_value) {
+        var sms = chatlog_value
+    }else{
+        var sms = data.message
+    }
+
     const messageItem = `
             <li class="message ${position} box" id="box-${data.message_id}">
-                <div class="avatar">${data.user}</div>
+                <div class="avatar">${echoUser}</div>
                     <div class="text_wrapper">
-                        <div class="text">${data.message}<br>
+                        <div class="text">${sms}<br>
                     </div>
                 </div>
             </li>`;
@@ -367,7 +381,7 @@ const observer = new IntersectionObserver(scrollTracking, {
     threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
 });
 
-let super_box_is_read = [];  // Множество сообщений отмеченных как прочитанно
+let super_box_is_read = [];  // Список для хранения множества сообщений is_read
 
 function scrollTracking(entries) {
     for (const entry of entries) {
