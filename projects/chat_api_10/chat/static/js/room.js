@@ -277,14 +277,17 @@ function drawMessage(data) {
                 </div>
             </li>`;
     messageList.innerHTML += messageItem;
+
+    // Callback Observer API Intersection
+    const boxes = document.querySelectorAll('.box');
+    boxes.forEach(element => observer.observe(element));
 }
 
 chatInsertLi.onclick = function () {
     // Добавляем элементы в начало
-    var ul = document.getElementById("messages");
-    var li5 = ul.children[0];
-
-    li5.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
+    let ul = document.getElementById("messages");
+    let li0 = ul.children[0];
+    li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
 
 }
 
@@ -311,7 +314,7 @@ messageList.addEventListener('wheel', function (event) {
         if (li0) {
             li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
         };
-            console.log('scrolling up');
+        console.log('scrolling up');
     }
 })
 
