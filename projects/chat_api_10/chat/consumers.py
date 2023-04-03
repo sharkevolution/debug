@@ -230,6 +230,10 @@ class ChatConsumer(WebsocketConsumer):
                     'user': self.user.username,
                     }
             )
+        
+        if messages_is_read := text_data_json.get('messages_is_read'):
+            # Get status 'is_read' messages
+            logging.warning(f'messages_is_read: {messages_is_read}')
 
     def get_last_status_users(self):
         """

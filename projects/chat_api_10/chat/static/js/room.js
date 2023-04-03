@@ -125,6 +125,11 @@ function chatEchoSend() {
     }));
 };
 
+// Scroll textArea
+// chatScroll.onclick = function () {
+//     chatLog.scrollTop = chatLog.scrollHeight;
+// };
+
 let chatSocket = null;
 
 function connect() {
@@ -226,11 +231,6 @@ onlineUsersSelector.onchange = function () {
     chatMessageInput.focus();
 };
 
-// Scroll textArea
-chatScroll.onclick = function () {
-    chatLog.scrollTop = chatLog.scrollHeight;
-};
-
 // Converter Em and Rem
 function getElementFontSize(context) {
     // Returns a number
@@ -285,7 +285,7 @@ function drawMessage(data) {
 
 chatInsertLi.onclick = function () {
     // Добавляем элементы в начало
-    let ul = document.getElementById("messages");
+    // let ul = document.getElementById("messages");
     let li0 = ul.children[0];
     li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
 
@@ -334,8 +334,7 @@ function throttle(callee, timeout) {
     }
   }
   
-
-// handle event wheel up in the chat
+// handle event WHELL UP mouse in the chat
 function wheel_up (event) {
     if (event.deltaY < 0) {
         var ul = document.getElementById("messages");
@@ -346,25 +345,19 @@ function wheel_up (event) {
         console.log('scrolling up');
     }
 }
-
-window.addEventListener('wheel', throttle(wheel_up, 1000)); 
+messageList.addEventListener('wheel', throttle(wheel_up, 100)); 
 
 // handle event Scroll Chat
-messageList.addEventListener("scroll", function(event) {
+function scrolling_chat(event) {
     output.textContent = `scrollTop: ${messageList.scrollTop}`;
     if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
         loadMore();
     }
-    if (messageList.scrollTop <= 0) {
-        var ul = document.getElementById("messages");
-        var li5 = ul.children[0];
-        li5.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
-    }
-
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
     boxes.forEach(element => observer.observe(element));
-});
+}
+messageList.addEventListener('scroll', throttle(scrolling_chat, 200)); 
 
 
 const debug = document.querySelector('.debug');
@@ -410,7 +403,7 @@ function scrollTracking(entries) {
     }
 }
 
-// Difference is_read messages
+// get difference sets for status messages 'is_read'
 function getDifference(setA, setB) {
     return new Set(
       [...setA].filter(element => !setB.has(element))
