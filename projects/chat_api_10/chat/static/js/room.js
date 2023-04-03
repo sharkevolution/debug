@@ -305,9 +305,38 @@ var loadMore = function () {
     }
 }
 
+// Set up the throttler 
+// Функция throttle будет принимать 2 аргумента:
+// - callee, функция, которую надо вызывать;
+// - timeout, интервал в мс, с которым следует пропускать вызовы.
+function throttle(callee, timeout) {
+    // Таймер будет определять,
+    // надо ли нам пропускать текущий вызов.
+    let timer = null
+  
+    // Как результат возвращаем другую функцию.
+    // Это нужно, чтобы мы могли не менять другие части кода,
+    // чуть позже мы увидим, как это помогает.
+    return function perform(...args) {
+      // Если таймер есть, то функция уже была вызвана,
+      // и значит новый вызов следует пропустить.
+      if (timer) return
+  
+      // Если таймера нет, значит мы можем вызвать функцию:
+      timer = setTimeout(() => {
+        // Аргументы передаём неизменными в функцию-аргумент:
+        callee(...args)
+  
+        // По окончании очищаем таймер:
+        clearTimeout(timer)
+        timer = null
+      }, timeout)
+    }
+  }
+  
 
 // handle event wheel up in the chat
-messageList.addEventListener('wheel', function (event) {
+function wheel_up (event) {
     if (event.deltaY < 0) {
         var ul = document.getElementById("messages");
         var li0 = ul.children[0];
@@ -316,11 +345,12 @@ messageList.addEventListener('wheel', function (event) {
         };
         console.log('scrolling up');
     }
-})
+}
 
+window.addEventListener('wheel', throttle(wheel_up, 1000)); 
 
 // handle event Scroll Chat
-messageList.addEventListener("scroll", (event) => {
+messageList.addEventListener("scroll", function(event) {
     output.textContent = `scrollTop: ${messageList.scrollTop}`;
     if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
         loadMore();
