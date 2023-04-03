@@ -52,3 +52,14 @@
     font-size: 16px;
     color: grey;
 }
+
+.debug {
+	position: fixed;
+	top: 0;
+	right: 0;
+	margin: 0;
+	padding: 10px;
+	background: #000000;
+	color: #ffffff;
+}
+

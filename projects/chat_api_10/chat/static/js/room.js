@@ -258,11 +258,14 @@ function clear_onlineUsersSelectorAdd() {
     }
 }
 
+let box_iter = 0
+
 function drawMessage(data) {
     let position = 'left';
     if (data.user === echoUser) position = 'right';
+    box_iter += 1
     const messageItem = `
-            <li class="message ${position}">
+            <li class="message ${position} box" id="box-${box_iter}">
                 <div class="avatar">${data.user}</div>
                     <div class="text_wrapper">
                         <div class="text">${data.message}<br>
@@ -273,7 +276,7 @@ function drawMessage(data) {
 }
 
 // Send echo username
-function chatEchoSend () {
+function chatEchoSend() {
     chatSocket.send(JSON.stringify({
         "echo": 'username',
     }));
@@ -283,7 +286,7 @@ chatInsertLi.onclick = function () {
     // Добавляем элементы в начало
     var ul = document.getElementById("messages");
     var li5 = ul.children[0];
-  
+
     li5.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
 
 }
@@ -293,38 +296,41 @@ const output = document.querySelector("#output");
 var ul = document.getElementById("messages");
 var nextItem = 1;
 
-var loadMore = function() {
-  for (var i = 0; i < 5; i++) {
-    var item = document.createElement('li');
-    item.innerText = 'Item ' + nextItem++;
-    messageList.appendChild(item);
-  }
+// Add New messages bottom chat 
+var loadMore = function () {
+    for (var i = 0; i < 5; i++) {
+        var item = document.createElement('li');
+        item.innerText = 'Item ' + nextItem++;
+        messageList.appendChild(item);
+    }
 }
 
-
+// Event Scroll Chat
 messageList.addEventListener("scroll", (event) => {
-  output.textContent = `scrollTop: ${messageList.scrollTop}`;
-
-  if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
+    output.textContent = `scrollTop: ${messageList.scrollTop}`;
+    if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
         loadMore();
-  }
-
+    }
+    // Callback Observer API Intersection
+    const boxes = document.querySelectorAll('.box');
+    boxes.forEach(element => observer.observe(element));
 });
 
 
+const debug = document.querySelector('.debug');
+const displayed = {};
 
-// function drawMessage(message) {
-//     let position = 'left';
-//     const date = new Date(message.timestamp);
-//     if (message.user === currentUser) position = 'right';
-//     const messageItem = `
-//             <li class="message ${position}">
-//                 <div class="avatar">${message.user}</div>
-//                     <div class="text_wrapper">
-//                         <div class="text">${message.body}<br>
-//                             <span class="small">${date}</span>
-//                     </div>
-//                 </div>
-//             </li>`;
-//     $(messageItem).appendTo('#messages');
-// }
+function scrollTracking(entries) {
+    for (const entry of entries) {
+        displayed[entry.target.id] = entry.intersectionRatio >= 0.2;
+    }
+    debug.textContent = Object
+        .entries(displayed)
+        .filter(([id, inViewport]) => inViewport)
+        .map(([id, inViewport]) => id)
+        .join('\n');
+}
+
+const observer = new IntersectionObserver(scrollTracking, {
+    threshold: [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+});
