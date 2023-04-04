@@ -36,6 +36,9 @@ class Room(models.Model):  # Thread
     def get_online_count(self):
         return self.online.count()
 
+    def get_participante_count(self):
+        return self.participante.count()
+
     # def join(self, user):
     #     self.online.add(user)
     #     self.save()

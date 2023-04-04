@@ -169,6 +169,16 @@ class ChatConsumer(WebsocketConsumer):
             if not self.user.is_authenticated:  # new
                 return                          # new
 
+            # Если в комнате всего 2 участника, делаем сообщение частным
+            participantes_count = self.room.get_participante_count()
+            if participantes_count == 2:
+                logging.warning(f'Participante count: {participantes_count}')
+                if not message.startswith('/pm '):
+                    # Всего Два участника, поэтому, делаем сообщение частным,
+                    second_user = [ n.username for n in self.room.participante.all() if not n.username == self.user.username]
+                    message = ''.join(['/pm ', second_user[0], " ", message])
+                    logging.warning('Extra: ' + message)
+
             # -------------------- new --------------------
             if message.startswith('/pm '):
                 split = message.split(' ', 2)
@@ -258,9 +268,9 @@ class ChatConsumer(WebsocketConsumer):
                             # Сообщение публичное для группы
                             # Добавить проверку если в группе всего 2 участника, тогда контролируем
                             # статус прочтиано или нет и отмечаем сообщение как Частное
-                            # меняем от кого и кому  
+                            # меняем от кого и кому
                             pass
-                        
+
                         logging.warning(f'You: {self.user.username}: {str(b)}')
                         logging.warning(f'from_: {from_}')
                         logging.warning(f'to_: {to_}')
