@@ -154,7 +154,8 @@ function connect() {
         switch (data.type) {
             case "chat_message":
                 // chatLog.value += data.user + ": " + data.message + "\n";
-                drawMessage(data);
+                user_view = data.user;
+                drawMessage(data, user_view);
                 break;
             case "user_list":
                 // participantes list and status
@@ -182,11 +183,13 @@ function connect() {
                 break;
             case "private_message":
                 chatLog_value = "PM from " + data.user + ": " + data.message + "\n";
-                drawMessage(data, chatLog_value);
+                user_view = data.user;
+                drawMessage(data, user_view, chatLog_value);
                 break;
             case "private_message_delivered":
                 chatLog_value = "PM to " + data.target + ": " + data.message + "\n";
-                drawMessage(data, chatLog_value);
+                user_view = echoUser;
+                drawMessage(data, user_view, chatLog_value);
                 break;
             case "private_quit":
                 // Пользователя удалили, выход из комнаты
@@ -267,13 +270,11 @@ function clear_onlineUsersSelectorAdd() {
 }
 
 /// Дописать правильное расположение от кого/кому лево право (частные сообщения неправильно)
-function drawMessage(data, chatlog_value='') {
+function drawMessage(data, user_view='', chatlog_value='') {
     // Add message to chat
-    let position = 'left';
-    let target_user = data.user; 
-    if (data.user === echoUser) {
+    let position = 'left'; 
+    if (user_view === echoUser) {
         position = 'right';
-        target_user = echoUser;
     }
 
     if (chatlog_value) {
@@ -284,7 +285,7 @@ function drawMessage(data, chatlog_value='') {
 
     const messageItem = `
             <li class="message ${position} box" id="box-${data.message_id}">
-                <div class="avatar">${echoUser}</div>
+                <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
                         <div class="text">${sms}<br>
                     </div>
@@ -371,7 +372,7 @@ function scrolling_chat(event) {
     const boxes = document.querySelectorAll('.box');
     boxes.forEach(element => observer.observe(element));
 }
-messageList.addEventListener('scroll', throttle(scrolling_chat, 200)); 
+messageList.addEventListener('scroll', throttle(scrolling_chat, 100)); 
 
 
 const debug = document.querySelector('.debug');
