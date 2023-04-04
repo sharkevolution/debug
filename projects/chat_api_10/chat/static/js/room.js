@@ -138,6 +138,8 @@ function connect() {
     chatSocket.onopen = function (e) {
         console.log("Successfully connected to the WebSocket.");
         chatEchoSend();
+        // Send update messages delivered status, time interval every 3sec 
+        let interval = setInterval(()=> update_messages_is_read(chatSocket), 3000);
     }
 
     chatSocket.onclose = function (e) {
@@ -230,6 +232,17 @@ function connect() {
 connect();
 // ****************
 
+// Update base, status messages is_read
+const update_messages_is_read = async(ws) =>{
+    if (super_box_is_read.length > 0) {
+        
+        chatSocket.send(JSON.stringify({
+            "messages_is_read": super_box_is_read,
+        }));
+
+    }
+}
+
 onlineUsersSelector.onchange = function () {
     chatMessageInput.value = "/pm " + onlineUsersSelector.value + " ";
     onlineUsersSelector.value = null;
@@ -269,7 +282,6 @@ function clear_onlineUsersSelectorAdd() {
     }
 }
 
-/// Дописать правильное расположение от кого/кому лево право (частные сообщения неправильно)
 function drawMessage(data, user_view='', chatlog_value='') {
     // Add message to chat
     let position = 'left'; 
@@ -282,7 +294,6 @@ function drawMessage(data, user_view='', chatlog_value='') {
     }else{
         var sms = data.message
     }
-
     const messageItem = `
             <li class="message ${position} box" id="box-${data.message_id}">
                 <div class="avatar">${user_view}</div>
@@ -299,11 +310,8 @@ function drawMessage(data, user_view='', chatlog_value='') {
 }
 
 chatInsertLi.onclick = function () {
-    // Добавляем элементы в начало
-    // let ul = document.getElementById("messages");
     let li0 = ul.children[0];
     li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
-
 }
 
 // const scroller = document.querySelector("#scroller");
@@ -403,25 +411,28 @@ function scrollTracking(entries) {
         };
     }
 
-    const set1 = new Set(box_status);
-    const set2 = new Set(super_box_is_read);
-    let different_set = getDifference(set1, set2);
-    let dif = Array.from(different_set);
-    super_box_is_read = super_box_is_read.concat(dif);
+    // const set1 = new Set(box_status);
+    // const set2 = new Set(super_box_is_read);
+    // let different_set = getDifference(set1, set2);
+    // let dif = Array.from(different_set);
+    
+    // super_box_is_read = super_box_is_read.concat(dif);
+    super_box_is_read = box_status;
+    console.log('super_box_is_read: ' + super_box_is_read);
 
-    if (dif.length > 0) {
-        // Update base, status messages is_read
-        chatSocket.send(JSON.stringify({
-            "messages_is_read": dif,
-        }));
-        console.log('different set is read: ' + dif);
-    }
+    // if (dif.length > 0) {
+    //     // Update base, status messages is_read
+    //     chatSocket.send(JSON.stringify({
+    //         "messages_is_read": dif,
+    //     }));
+        // console.log('different set is read: ' + dif);
+    // }
 }
 
 // get difference sets for status messages 'is_read'
-function getDifference(setA, setB) {
-    return new Set(
-      [...setA].filter(element => !setB.has(element))
-    );
-  }
+// function getDifference(setA, setB) {
+//     return new Set(
+//       [...setA].filter(element => !setB.has(element))
+//     );
+//   }
   

@@ -204,6 +204,7 @@ class ChatConsumer(WebsocketConsumer):
                         'user': self.user.username,
                         'message': target_msg,
                         'message_id': last_text.id,
+                        'message_status': last_text.is_read,  # Добавляем статус прочитано или нет
                     }
                 )
                 
@@ -213,12 +214,13 @@ class ChatConsumer(WebsocketConsumer):
                     'target': target,
                     'message': target_msg,
                     'message_id': last_text.id,
+                    'message_status': last_text.is_read,  # Добавляем статус, прочитано или нет
                 }))
 
                 return
             # ---------------- end of new ----------------
 
-            # Сохраняем запись, public
+            # Сохраняем запись, Public messages
             Message.objects.create(user=self.user, recipient=self.user,
                                    status_text='public',
                                    room=self.room, content=message)
@@ -236,6 +238,7 @@ class ChatConsumer(WebsocketConsumer):
                     'user': self.user.username,  # new
                     'message': message,
                     'message_id': last_text.id,
+                    'message_status': False,  # публичная комната участник 1 или больше > 2
                 }
             )
 
@@ -251,6 +254,7 @@ class ChatConsumer(WebsocketConsumer):
         
         if messages_is_read := text_data_json.get('messages_is_read'):
             # Get status 'is_read' messages and Update into base
+            logging.warning('I am function messages_is_read: ' + str(messages_is_read))
             for b in messages_is_read:
                 pk = b.split('-')
                 if pk[1].isnumeric():
@@ -264,12 +268,9 @@ class ChatConsumer(WebsocketConsumer):
                             # частное сообщение
                             # наблюдатель (you) не равен от кого (from) и (you) равен (to)  
                             Message.objects.filter(id=int(pk[1])).update(is_read=True)
-                        if from_ == to_:
-                            # Сообщение публичное для группы
-                            # Добавить проверку если в группе всего 2 участника, тогда контролируем
-                            # статус прочтиано или нет и отмечаем сообщение как Частное
-                            # меняем от кого и кому
-                            pass
+                        # if from_ == to_:
+                        #     # Сообщение публичное для группы
+                        #     pass
 
                         logging.warning(f'You: {self.user.username}: {str(b)}')
                         logging.warning(f'from_: {from_}')
