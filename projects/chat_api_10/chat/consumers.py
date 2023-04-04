@@ -256,6 +256,9 @@ class ChatConsumer(WebsocketConsumer):
                             Message.objects.filter(id=int(pk[1])).update(is_read=True)
                         if from_ == to_:
                             # Сообщение публичное для группы
+                            # Добавить проверку если в группе всего 2 участника, тогда контролируем
+                            # статус прочтиано или нет и отмечаем сообщение как Частное
+                            # меняем от кого и кому  
                             pass
                         
                         logging.warning(f'You: {self.user.username}: {str(b)}')
