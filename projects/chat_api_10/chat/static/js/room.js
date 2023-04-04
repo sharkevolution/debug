@@ -298,11 +298,15 @@ function drawMessage(data, user_view='', chatlog_value='') {
             <li class="message ${position} box" id="box-${data.message_id}">
                 <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
-                        <div class="text">${sms}<br>
+                        <div class="text"> ${sms}<br>
+                        <div id="is_read"></div>
                     </div>
                 </div>
             </li>`;
     messageList.innerHTML += messageItem;
+
+    let change_status_html = document.getElementById("is_read");
+    change_status_html.setAttribute("class", "bi bi-check");
 
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
