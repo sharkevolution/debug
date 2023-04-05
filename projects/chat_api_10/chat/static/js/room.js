@@ -130,6 +130,15 @@ function chatEchoSend() {
 //     chatLog.scrollTop = chatLog.scrollHeight;
 // };
 
+// Update base, status messages is_read
+const update_messages_is_read = async(ws) =>{
+    if (super_box_is_read.length > 0) {
+        chatSocket.send(JSON.stringify({
+            "messages_is_read": super_box_is_read,
+        }));
+    }
+}
+
 let chatSocket = null;
 
 function connect() {
@@ -137,6 +146,7 @@ function connect() {
 
     chatSocket.onopen = function (e) {
         console.log("Successfully connected to the WebSocket.");
+        
         chatEchoSend();
         // Send update messages delivered status, time interval every 3sec 
         let interval = setInterval(()=> update_messages_is_read(chatSocket), 3000);
@@ -209,8 +219,33 @@ function connect() {
             case "user_echo":
                 echoUser = data.user;
                 break;
+            
+            case "update_messages_is_read":
+                
+                console.log(data.messages_is_read);
+
+                for (const key of Object.keys(data.messages_is_read)) {
+
+                    console.log(data.messages_is_read[key]);
+                    if (data.messages_is_read[key] == true){
+                        var up_status = "bi bi-check-all"
+                    }else{
+                        var up_status = "bi bi-check"
+                    }
+                    let box = document.getElementById(key);
+                    let child = box.children;
+                    let child_is_read = child[1].children[0].children[1];
+
+                    let child_avatar = child[0];
+                    let avatar = child_avatar.textContent;
+                    if (avatar == echoUser){
+                        child_is_read.setAttribute("class", up_status);                        
+                    }
+
+                };
+                break;
             default:
-                console.error("Unknown message type!");
+                console.error("Unknown message type! " + data.type);
                 break;
         }
 
@@ -231,17 +266,6 @@ function connect() {
 // ****************
 connect();
 // ****************
-
-// Update base, status messages is_read
-const update_messages_is_read = async(ws) =>{
-    if (super_box_is_read.length > 0) {
-        
-        chatSocket.send(JSON.stringify({
-            "messages_is_read": super_box_is_read,
-        }));
-
-    }
-}
 
 onlineUsersSelector.onchange = function () {
     chatMessageInput.value = "/pm " + onlineUsersSelector.value + " ";
@@ -305,8 +329,8 @@ function drawMessage(data, user_view='', chatlog_value='') {
             </li>`;
     messageList.innerHTML += messageItem;
 
-    let change_status_html = document.getElementById("is_read");
-    change_status_html.setAttribute("class", "bi bi-check");
+    // let change_status_html = document.getElementById("is_read");
+    // change_status_html.setAttribute("class", "bi bi-check");
 
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
@@ -409,6 +433,7 @@ function scrollTracking(entries) {
     let i = 0;
     let box_status = [];
     for (const key of Object.keys(displayed)) {
+        
         if (displayed[key]) {
             box_status[i] = key;
             i += 1; 

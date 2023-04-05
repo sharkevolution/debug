@@ -254,30 +254,41 @@ class ChatConsumer(WebsocketConsumer):
         
         if messages_is_read := text_data_json.get('messages_is_read'):
             # Get status 'is_read' messages and Update into base
-            logging.warning('I am function messages_is_read: ' + str(messages_is_read))
+
+            update_is_read = {}
+            
             for b in messages_is_read:
                 pk = b.split('-')
-                if pk[1].isnumeric():
-                    try:
-                        whois_message = Message.objects.get(id=int(pk[1]))
-                        you_ = self.user.username
-                        from_ = whois_message.user
-                        to_ = whois_message.recipient
+                whois_message = Message.objects.get(id=int(pk[1]))
+                you_ = str(self.user.username)
+                from_ = str(whois_message.user)
+                to_ = str(whois_message.recipient)
 
-                        if not you_ == from_ and you_ == to_:
-                            # частное сообщение
-                            # наблюдатель (you) не равен от кого (from) и (you) равен (to)  
-                            Message.objects.filter(id=int(pk[1])).update(is_read=True)
-                        # if from_ == to_:
-                        #     # Сообщение публичное для группы
-                        #     pass
+                if not you_ == from_ and you_ == to_:
+                    # частное сообщение
+                    # наблюдатель (you) не равен от кого (from) и (you) равен (to)  
+                    Message.objects.filter(id=int(pk[1])).update(is_read=True)
+                    
+                    update_is_read[b] = True
+                    logging.warning('Update')
 
-                        logging.warning(f'You: {self.user.username}: {str(b)}')
-                        logging.warning(f'from_: {from_}')
-                        logging.warning(f'to_: {to_}')
-                    except Exception as ex:
-                        logging.warning(ex)
-                        logging.warning(f'number box: {b}')
+                else:
+                    # Сообщение публичное для группы
+                    update_is_read[b] = whois_message.is_read
+
+                logging.warning(f'You: {self.user.username}: {str(b)}')
+                logging.warning(f'from_: {from_}')
+                logging.warning(f'to_: {to_}')
+
+            # send Update status messages
+            async_to_sync(self.channel_layer.group_send)(
+                f'inbox_{self.user.username}',
+                {
+                    'type': 'update_messages_is_read',
+                    'user': self.user.username,
+                    'messages_is_read': update_is_read,
+                    }
+            )
 
     def get_last_status_users(self):
         """
@@ -326,6 +337,9 @@ class ChatConsumer(WebsocketConsumer):
             с разделением на прочитанные и не прочитанные
         """
         pass
+
+    def update_messages_is_read(self, event):
+        self.send(text_data=json.dumps(event))
 
     def user_echo(self, event):
         # Send echo username
