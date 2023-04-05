@@ -222,11 +222,11 @@ function connect() {
             
             case "update_messages_is_read":
                 
-                console.log(data.messages_is_read);
+                // console.log(data.messages_is_read);
 
                 for (const key of Object.keys(data.messages_is_read)) {
 
-                    console.log(data.messages_is_read[key]);
+                    // console.log(data.messages_is_read[key]);
                     if (data.messages_is_read[key] == true){
                         var up_status = "bi bi-check-all"
                     }else{
@@ -244,6 +244,12 @@ function connect() {
 
                 };
                 break;
+            case "history_navigation":
+                // Проверить и добавить истрорию, навигация по времени назад 
+                console.log('Place for add handler history_navigation');
+                wrap_history(data);
+                break;
+
             default:
                 console.error("Unknown message type! " + data.type);
                 break;
@@ -306,6 +312,53 @@ function clear_onlineUsersSelectorAdd() {
     }
 }
 
+
+function wrap_history(data){
+
+    for (const key of Object.keys(data.update_navigation_back)) {
+        
+        history_data = data.update_navigation_back[key]
+        
+        // Add message to chat
+        let position = 'left'; 
+        if (history_data.user == echoUser) {position = 'right';}
+
+        if ( history_data.user == echoUser){
+            //private_delivered
+            chatLog_value = "PM to " + history_data.recipient + ": " + history_data.content + "\n";
+            user_view = echoUser;
+        }else{
+            //private_message
+            chatLog_value = "PM from " + history_data.user + ": " + history_data.content + "\n";
+            user_view = data.user;
+        }
+
+        box_exists = document.getElementById(`box-${key}`);
+        console.log(`box-${key}`);
+        if (!box_exists) {
+
+            const messageItem = `
+                    <li class="message ${position} box" id="box-${key}">
+                        <div class="avatar">${user_view}</div>
+                            <div class="text_wrapper">
+                                <div class="text"> ${chatLog_value}<br>
+                                <div id="is_read"></div>
+                                <div id="is_created"><p>${history_data.created}</p></div>
+                            </div>
+                        </div>
+                    </li>`;
+            // messageList.innerHTML += messageItem;
+            let li0 = ul.children[0];
+            li0.insertAdjacentHTML("beforeBegin", messageItem);
+
+            // // Callback Observer API Intersection
+            const boxes = document.querySelectorAll('.box');
+            boxes.forEach(element => observer.observe(element));
+        };
+
+    };
+}
+
 function drawMessage(data, user_view='', chatlog_value='') {
     // Add message to chat
     let position = 'left'; 
@@ -349,6 +402,13 @@ var nextItem = 1;
 
 // Add New messages bottom chat 
 var loadMore = function () {
+
+    // Отправка запроса на обновление
+    chatSocket.send(JSON.stringify({
+        "messages_history": {'navigation_forward': super_box_is_read},
+    }));
+
+    console.log('scrolling down');
     for (var i = 0; i < 5; i++) {
         var item = document.createElement('li');
         item.innerText = 'Item ' + nextItem++;
@@ -388,11 +448,17 @@ function throttle(callee, timeout) {
 // handle event WHELL UP mouse in the chat
 function wheel_up (event) {
     if (event.deltaY < 0) {
-        var ul = document.getElementById("messages");
-        var li0 = ul.children[0];
-        if (li0) {
-            li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
-        };
+
+    // Отправка запроса на обновление
+    chatSocket.send(JSON.stringify({
+        "messages_history": {'navigation_back': super_box_is_read},
+    }));
+
+        // var ul = document.getElementById("messages");
+        // var li0 = ul.children[0];
+        // if (li0) {
+        //     li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
+        // };
         console.log('scrolling up');
     }
 }

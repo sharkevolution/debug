@@ -189,10 +189,10 @@ class ChatConsumer(WebsocketConsumer):
                 user_destination = User.objects.get(username=target)
                 Message.objects.create(user=self.user, recipient=user_destination,
                                        status_text='private',
-                                       room=self.room, content=message)
+                                       room=self.room, content=target_msg)
 
                 once_text = Message.objects.filter(user=self.user, recipient=user_destination, status_text='private', 
-                                            room=self.room, content=message).order_by("created")
+                                            room=self.room, content=target_msg).order_by("created")
                 last_text = once_text.last()
                 logging.warning(last_text.id)
 
@@ -289,6 +289,74 @@ class ChatConsumer(WebsocketConsumer):
                     'messages_is_read': update_is_read,
                     }
             )
+        if history := text_data_json.get("messages_history"):
+            if navigation := history.get('navigation_back'):
+                # logging.warning('navigation_back: ' + str(navigation))
+                hst = self.get_messages_navigation_back(navigation)
+
+                # send Update status messages
+                async_to_sync(self.channel_layer.group_send)(
+                    f'inbox_{self.user.username}',
+                    {
+                        'type': 'history_navigation',
+                        'user': self.user.username,
+                        'update_navigation_back': hst,
+                        }
+                )
+
+
+            if navigation := history.get('navigation_forward'):
+                logging.warning('navigation_forward: ' + str(navigation))
+                self.get_messages_navigation_forward(navigation)
+
+    def get_messages_navigation_back(self, nav_list):
+
+        you_ = str(self.user.username)
+
+        logging.warning('nav_list: ' + str(nav_list))
+        first_list = []
+        for b in nav_list:
+            pk = b.split('-')
+            first_list.append(int(pk[1]))
+        
+        first_id = min(first_list)
+        # Найти до 10 сообщений равное или меньше указанной даты и времени
+        first_element = Message.objects.get(id=first_id)
+        hiback = Message.objects.filter(room=self.room, created__lte= first_element.created).order_by('-created')[:20]
+        logging.warning(str(hiback))
+        # Отобрать публичные и частные доступные пользователю
+        history_for_user = {}
+
+        # Выбирать отдельно по from_, потом to_,  потом public status !! Срезы неподходит не все охватывает
+        # после чего отсортировать по времени
+
+        for b in hiback: 
+            from_ = str(b.user.username)
+            to_ = str(b.recipient)
+            logging.warning(f'1You_: {you_} to_: {to_}')
+            if you_ == from_ or you_ == to_ or b.status_text == 'public':
+                logging.warning(f'2You_: {you_} to_: {to_}')
+                str_date_iso = b.created.strftime('%Y-%m-%d %H:%M:%S')
+
+                chunk = {
+                    'id': b.id,
+                    'user': from_,
+                    'recipient': to_,
+                    'room': str(b.room),
+                    'content': str(b.content),
+                    'status_text': str(b.status_text),
+                    'is_read': str(b.is_read),
+                    'created': str(str_date_iso),
+                }
+                history_for_user[f'{str(b.id)}'] = chunk
+
+        # logging.warning(str(history_for_user))
+        logging.warning('history_for_user: ' + str(len(history_for_user)))
+        
+        return history_for_user
+
+    def get_messages_navigation_forward(self, nav_list):
+        pass
 
     def get_last_status_users(self):
         """
@@ -337,6 +405,9 @@ class ChatConsumer(WebsocketConsumer):
             с разделением на прочитанные и не прочитанные
         """
         pass
+
+    def history_navigation(self, event):
+        self.send(text_data=json.dumps(event))
 
     def update_messages_is_read(self, event):
         self.send(text_data=json.dumps(event))

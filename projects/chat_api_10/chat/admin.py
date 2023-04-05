@@ -33,7 +33,11 @@ class TokenUserAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'recipient', 'status_text', 'room_name', 'content', 'is_read', 'created')
+    @admin.display(description='created_iso')
+    def admin_created(self, obj):
+        return obj.created.strftime('%Y-%m-%d %H:%M:%S')
+
+    list_display = ('id', 'user', 'recipient', 'status_text', 'room_name', 'content', 'is_read', 'admin_created')
     
     
 @admin.register(CursorParticipanteRoom)
