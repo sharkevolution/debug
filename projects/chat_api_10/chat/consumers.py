@@ -6,6 +6,7 @@ from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 
 from .models import Room, Message, User, OnlineParticipanteRoom
+from django.db.models import Q
 
 import logging
 logger = logging.getLogger(__name__)
@@ -322,10 +323,14 @@ class ChatConsumer(WebsocketConsumer):
         first_id = min(first_list)
         # Найти до 10 сообщений равное или меньше указанной даты и времени
         first_element = Message.objects.get(id=first_id)
-        hiback = Message.objects.filter(room=self.room, created__lte= first_element.created).order_by('-created')[:20]
-        logging.warning(str(hiback))
+                
+        hiback = Message.objects.filter(Q(room=self.room) 
+                                        & Q(created__lte= first_element.created) 
+                                        & (Q (user=self.user) | Q(recipient=self.user))).order_by('-created')[:3]
+        
+        # logging.warning(str(hiback))
         # Отобрать публичные и частные доступные пользователю
-        history_for_user = {}
+        history_for_user = []
 
         # Выбирать отдельно по from_, потом to_,  потом public status !! Срезы неподходит не все охватывает
         # после чего отсортировать по времени
@@ -348,7 +353,7 @@ class ChatConsumer(WebsocketConsumer):
                     'is_read': str(b.is_read),
                     'created': str(str_date_iso),
                 }
-                history_for_user[f'{str(b.id)}'] = chunk
+                history_for_user.append(chunk)
 
         # logging.warning(str(history_for_user))
         logging.warning('history_for_user: ' + str(len(history_for_user)))

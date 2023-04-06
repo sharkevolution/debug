@@ -246,7 +246,7 @@ function connect() {
                 break;
             case "history_navigation":
                 // Проверить и добавить истрорию, навигация по времени назад 
-                console.log('Place for add handler history_navigation');
+                // console.log('Place for add handler history_navigation');
                 wrap_history(data);
                 break;
 
@@ -315,30 +315,45 @@ function clear_onlineUsersSelectorAdd() {
 
 function wrap_history(data){
 
-    for (const key of Object.keys(data.update_navigation_back)) {
+    for (const key of data.update_navigation_back) {
         
-        history_data = data.update_navigation_back[key]
+        history_data = key
+        // console.log('Key: ' + key);
         
         // Add message to chat
         let position = 'left'; 
         if (history_data.user == echoUser) {position = 'right';}
 
-        if ( history_data.user == echoUser){
-            //private_delivered
+        if ( !(history_data.user ==  history_data.recipient) && history_data.user == echoUser ){
+            //private_delivered 
             chatLog_value = "PM to " + history_data.recipient + ": " + history_data.content + "\n";
             user_view = echoUser;
-        }else{
-            //private_message
+        }else if
+            ( !(history_data.user == history_data.recipient) && history_data.recipient == echoUser) {
+            //private_message from
             chatLog_value = "PM from " + history_data.user + ": " + history_data.content + "\n";
-            user_view = data.user;
+            user_view = history_data.user;
+            // console.log('I am too');
+        } else if 
+            (history_data.recipient == history_data.user && history_data.recipient == echoUser) {
+            //public message from
+            chatLog_value = history_data.content + "\n";
+            user_view = history_data.user;
+        } else {
+            //public message to
+            chatLog_value = history_data.content + "\n";
+            user_view = history_data.user;
+            // console.log(!(history_data.user == history_data.recipient));
+            // console.log(history_data.recipient == echoUser);
+            // console.log( !(history_data.user == history_data.recipient) && history_data.recipient == echoUser);
         }
 
-        box_exists = document.getElementById(`box-${key}`);
-        console.log(`box-${key}`);
+        // console.log(`box-${history_data}`);
+        box_exists = document.getElementById(`box-${key.id}`);
         if (!box_exists) {
 
             const messageItem = `
-                    <li class="message ${position} box" id="box-${key}">
+                    <li class="message ${position} box" id="box-${history_data.id}">
                         <div class="avatar">${user_view}</div>
                             <div class="text_wrapper">
                                 <div class="text"> ${chatLog_value}<br>
@@ -347,7 +362,7 @@ function wrap_history(data){
                             </div>
                         </div>
                     </li>`;
-            // messageList.innerHTML += messageItem;
+
             let li0 = ul.children[0];
             li0.insertAdjacentHTML("beforeBegin", messageItem);
 
@@ -513,7 +528,7 @@ function scrollTracking(entries) {
     
     // super_box_is_read = super_box_is_read.concat(dif);
     super_box_is_read = box_status;
-    console.log('super_box_is_read: ' + super_box_is_read);
+    // console.log('super_box_is_read: ' + super_box_is_read);
 
     // if (dif.length > 0) {
     //     // Update base, status messages is_read
