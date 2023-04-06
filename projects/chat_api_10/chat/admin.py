@@ -42,4 +42,4 @@ class MessageAdmin(admin.ModelAdmin):
     
 @admin.register(CursorParticipanteRoom)
 class CursorAdmin(admin.ModelAdmin):
-    list_display = ('id', 'user', 'room', 'cursor_message_id')
+    list_display = ('id', 'user', 'room', 'cursor_begin_message_id', 'cursor_end_message_id')

@@ -72,7 +72,8 @@ class OnlineParticipanteRoom(models.Model):
 class CursorParticipanteRoom(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE, db_index=True)
     room = models.ForeignKey(to=Room, on_delete=models.CASCADE)  # thread
-    cursor_message_id = models.IntegerField(default=0)  # id сообщения
+    cursor_begin_message_id = models.IntegerField(default=0)  # id начала сообщения
+    cursor_end_message_id = models.IntegerField(default=0)  # id окончания сообщения
 
 
 class Message(models.Model):

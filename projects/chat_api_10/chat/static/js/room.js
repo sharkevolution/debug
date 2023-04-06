@@ -125,6 +125,12 @@ function chatEchoSend() {
     }));
 };
 
+function chat_open_page_history() {
+    chatSocket.send(JSON.stringify({
+        "messages_history": {'navigation_open_page': 1},
+    }));
+};
+
 // Scroll textArea
 // chatScroll.onclick = function () {
 //     chatLog.scrollTop = chatLog.scrollHeight;
@@ -148,6 +154,9 @@ function connect() {
         console.log("Successfully connected to the WebSocket.");
         
         chatEchoSend();
+        chat_open_page_history();
+
+        console.log("Start History");
         // Send update messages delivered status, time interval every 3sec 
         let interval = setInterval(()=> update_messages_is_read(chatSocket), 3000);
     }
@@ -242,6 +251,9 @@ function connect() {
                         child_is_read.setAttribute("class", up_status);                        
                     }
 
+                    // Update unread messages
+                    chatScroll.textContent = data.messages_unread.length;
+
                 };
                 break;
             case "history_navigation":
@@ -315,6 +327,8 @@ function clear_onlineUsersSelectorAdd() {
 
 function wrap_history(data){
 
+    console.log('wrap_history');
+
     for (const key of data.update_navigation_back) {
         
         history_data = key
@@ -348,7 +362,7 @@ function wrap_history(data){
             // console.log( !(history_data.user == history_data.recipient) && history_data.recipient == echoUser);
         }
 
-        // console.log(`box-${history_data}`);
+        console.log(`box-${history_data}`);
         box_exists = document.getElementById(`box-${key.id}`);
         if (!box_exists) {
 
@@ -363,8 +377,12 @@ function wrap_history(data){
                         </div>
                     </li>`;
 
+            // if (ul.length > 0) {
             let li0 = ul.children[0];
             li0.insertAdjacentHTML("beforeBegin", messageItem);
+            // }else{
+                // document.getElementById("messages").innerHTML += messageItem;
+            // }
 
             // // Callback Observer API Intersection
             const boxes = document.querySelectorAll('.box');
@@ -465,7 +483,7 @@ function throttle(callee, timeout) {
 function wheel_up (event) {
     if (event.deltaY < 0) {
 
-    console.log(super_box_is_read);
+    // console.log(super_box_is_read);
     // Отправка запроса на обновление
     chatSocket.send(JSON.stringify({
         "messages_history": {'navigation_back': super_box_is_read},

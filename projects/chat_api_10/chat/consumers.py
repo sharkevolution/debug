@@ -5,7 +5,7 @@ import json
 from asgiref.sync import async_to_sync
 from channels.generic.websocket import WebsocketConsumer
 
-from .models import Room, Message, User, OnlineParticipanteRoom
+from .models import Room, Message, User, OnlineParticipanteRoom, CursorParticipanteRoom
 from django.db.models import Q
 
 import logging
@@ -75,8 +75,8 @@ class ChatConsumer(WebsocketConsumer):
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
                 {
-                'type': 'user_list',
-                'participantes': current_users_status,
+                    'type': 'user_list',
+                    'participantes': current_users_status,
                 }
             )
 
@@ -177,7 +177,8 @@ class ChatConsumer(WebsocketConsumer):
                 logging.warning(f'Participante count: {participantes_count}')
                 if not message.startswith('/pm '):
                     # Всего Два участника, поэтому, делаем сообщение частным,
-                    second_user = [ n.username for n in self.room.participante.all() if not n.username == self.user.username]
+                    second_user = [n.username for n in self.room.participante.all(
+                    ) if not n.username == self.user.username]
                     message = ''.join(['/pm ', second_user[0], " ", message])
                     logging.warning('Extra: ' + message)
 
@@ -193,8 +194,8 @@ class ChatConsumer(WebsocketConsumer):
                                        status_text='private',
                                        room=self.room, content=target_msg)
 
-                once_text = Message.objects.filter(user=self.user, recipient=user_destination, status_text='private', 
-                                            room=self.room, content=target_msg).order_by("created")
+                once_text = Message.objects.filter(user=self.user, recipient=user_destination, status_text='private',
+                                                   room=self.room, content=target_msg).order_by("created")
                 last_text = once_text.last()
                 logging.warning(last_text.id)
 
@@ -209,7 +210,7 @@ class ChatConsumer(WebsocketConsumer):
                         'message_status': last_text.is_read,  # Добавляем статус прочитано или нет
                     }
                 )
-                
+
                 # send private message delivered to the user
                 self.send(json.dumps({
                     'type': 'private_message_delivered',
@@ -227,9 +228,8 @@ class ChatConsumer(WebsocketConsumer):
                                    status_text='public',
                                    room=self.room, content=message)
 
-
-            once_text = Message.objects.filter(user=self.user, recipient=self.user, status_text='public', 
-                                            room=self.room, content=message).order_by("created")
+            once_text = Message.objects.filter(user=self.user, recipient=self.user, status_text='public',
+                                               room=self.room, content=message).order_by("created")
             last_text = once_text.last()
             logging.warning(last_text.id)
             # send chat message event to the room
@@ -245,20 +245,23 @@ class ChatConsumer(WebsocketConsumer):
             )
 
         if echo := text_data_json.get('echo'):
+
+            logging.warning('Echo');
+            
             # send private Echo Username to the target
             async_to_sync(self.channel_layer.group_send)(
                 f'inbox_{self.user.username}',
                 {
                     'type': 'user_echo',
                     'user': self.user.username,
-                    }
+                }
             )
-        
+
         if messages_is_read := text_data_json.get('messages_is_read'):
             # Get status 'is_read' messages and Update into base
 
             update_is_read = {}
-            
+
             for b in messages_is_read:
                 pk = b.split('-')
                 whois_message = Message.objects.get(id=int(pk[1]))
@@ -268,19 +271,26 @@ class ChatConsumer(WebsocketConsumer):
 
                 if not you_ == from_ and you_ == to_:
                     # частное сообщение
-                    # наблюдатель (you) не равен от кого (from) и (you) равен (to)  
+                    # наблюдатель (you) не равен от кого (from) и (you) равен (to)
                     Message.objects.filter(id=int(pk[1])).update(is_read=True)
-                    
+
                     update_is_read[b] = True
-                    logging.warning('Update')
+                    # logging.warning('Update')
 
                 else:
                     # Сообщение публичное для группы
                     update_is_read[b] = whois_message.is_read
 
-                logging.warning(f'You: {self.user.username}: {str(b)}')
-                logging.warning(f'from_: {from_}')
-                logging.warning(f'to_: {to_}')
+                # logging.warning(f'You: {self.user.username}: {str(b)}')
+                # logging.warning(f'from_: {from_}')
+                # logging.warning(f'to_: {to_}')
+
+            unread = Message.objects.filter(Q(room=self.room)
+                                            & (Q(is_read=False ) & Q(status_text='private'))
+                                            & (Q(user=self.user) | Q(recipient=self.user))).order_by('created')
+            unread_id = []
+            for b in unread:
+                unread_id.append(b.id)
 
             # send Update status messages
             async_to_sync(self.channel_layer.group_send)(
@@ -289,7 +299,8 @@ class ChatConsumer(WebsocketConsumer):
                     'type': 'update_messages_is_read',
                     'user': self.user.username,
                     'messages_is_read': update_is_read,
-                    }
+                    'messages_unread': unread_id,  # Обновляем не прочитанные сообщения
+                }
             )
         if history := text_data_json.get("messages_history"):
             if navigation := history.get('navigation_back'):
@@ -303,13 +314,77 @@ class ChatConsumer(WebsocketConsumer):
                         'type': 'history_navigation',
                         'user': self.user.username,
                         'update_navigation_back': hst,
-                        }
+                    }
                 )
-
 
             if navigation := history.get('navigation_forward'):
                 logging.warning('navigation_forward: ' + str(navigation))
                 self.get_messages_navigation_forward(navigation)
+
+            if navigation := history.get('navigation_open_page'):
+                logging.warning('navigation_open_page')
+                hst_open_page = self.get_messages_navigation_open_page()
+
+                # logging.warning(hst_open_page)                
+
+                # send history messages when user open/reload page
+                async_to_sync(self.channel_layer.group_send)(
+                    f'inbox_{self.user.username}',
+                    {
+                        'type': 'history_navigation',
+                        'user': self.user.username,
+                        'update_navigation_back': hst_open_page
+                    }
+                )
+
+    def get_messages_navigation_open_page(self):
+        """ Выбрать последние просмотренные страницы
+        """
+        you_ = str(self.user.username)
+
+        # Получаем номер первого и последнего сообщения
+        cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
+        first_id = cursor_range[0].cursor_begin_message_id
+        last_id = cursor_range[0].cursor_end_message_id
+
+        history_for_user = []
+
+        # Найти сообщений равное или меньше указанной даты и времени
+        first_element = Message.objects.filter(id=first_id)
+
+        if first_element:
+            first_element = Message.objects.get(id=first_id)
+
+            hiback = Message.objects.filter(Q(room=self.room)
+                                            & Q(created__lte=first_element.created)
+                                            & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')
+
+            # logging.warning(str(hiback))
+
+            for b in hiback:
+                from_ = str(b.user.username)
+                to_ = str(b.recipient)
+                # logging.warning(f'1You_: {you_} to_: {to_}')
+                if you_ == from_ or you_ == to_ or b.status_text == 'public':
+                    # logging.warning(f'2You_: {you_} to_: {to_}')
+                    str_date_iso = b.created.strftime('%Y-%m-%d %H:%M:%S')
+
+                    chunk = {
+                        'id': b.id,
+                        'user': from_,
+                        'recipient': to_,
+                        'room': str(b.room),
+                        'content': str(b.content),
+                        'status_text': str(b.status_text),
+                        'is_read': str(b.is_read),
+                        'created': str(str_date_iso),
+                    }
+                    history_for_user.append(chunk)
+
+            # logging.warning(str(history_for_user))
+            # logging.warning('history_for_user: ' + str(len(history_for_user)))
+
+        return history_for_user
 
     def get_messages_navigation_back(self, nav_list):
 
@@ -320,28 +395,38 @@ class ChatConsumer(WebsocketConsumer):
         for b in nav_list:
             pk = b.split('-')
             first_list.append(int(pk[1]))
-        
+
         first_id = min(first_list)
-        # Найти до 10 сообщений равное или меньше указанной даты и времени
+        last_id = max(first_list)
+
+        # Сохраняем номер первого и последнего сообщения
+        update_row = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,).update(
+                                                                                cursor_begin_message_id = first_id,
+                                                                                cursor_end_message_id = last_id
+                                                                                )
+        if not update_row:
+            CursorParticipanteRoom.objects.create(user=self.user, 
+                                                    room=self.room, 
+                                                    cursor_begin_message_id = first_id,
+                                                    cursor_end_message_id = last_id,)
+
+
+        # Найти сообщений равное или меньше указанной даты и времени
         first_element = Message.objects.get(id=first_id)
-                
-        hiback = Message.objects.filter(Q(room=self.room) 
-                                        & Q(created__lte= first_element.created) 
-                                        & (Q (user=self.user) | Q(recipient=self.user))).order_by('-created')[:3]
-        
+
+        hiback = Message.objects.filter(Q(room=self.room)
+                                        & Q(created__lte=first_element.created)
+                                        & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[:3]
+
         # logging.warning(str(hiback))
-        # Отобрать публичные и частные доступные пользователю
         history_for_user = []
 
-        # Выбирать отдельно по from_, потом to_,  потом public status !! Срезы неподходит не все охватывает
-        # после чего отсортировать по времени
-
-        for b in hiback: 
+        for b in hiback:
             from_ = str(b.user.username)
             to_ = str(b.recipient)
-            logging.warning(f'1You_: {you_} to_: {to_}')
+            # logging.warning(f'1You_: {you_} to_: {to_}')
             if you_ == from_ or you_ == to_ or b.status_text == 'public':
-                logging.warning(f'2You_: {you_} to_: {to_}')
+                # logging.warning(f'2You_: {you_} to_: {to_}')
                 str_date_iso = b.created.strftime('%Y-%m-%d %H:%M:%S')
 
                 chunk = {
@@ -357,8 +442,8 @@ class ChatConsumer(WebsocketConsumer):
                 history_for_user.append(chunk)
 
         # logging.warning(str(history_for_user))
-        logging.warning('history_for_user: ' + str(len(history_for_user)))
-        
+        # logging.warning('history_for_user: ' + str(len(history_for_user)))
+
         return history_for_user
 
     def get_messages_navigation_forward(self, nav_list):
@@ -368,16 +453,16 @@ class ChatConsumer(WebsocketConsumer):
         """
             Get last status user (on/offline)
         """
-        current_users_status={}
-        user_room_list=self.room.participante.all()
+        current_users_status = {}
+        user_room_list = self.room.participante.all()
         for b in user_room_list:
-            user_history=OnlineParticipanteRoom.objects.filter(user=b.id,
-                                                                    room=self.room).order_by("timestamp")
+            user_history = OnlineParticipanteRoom.objects.filter(user=b.id,
+                                                                 room=self.room).order_by("timestamp")
             if h := user_history.last():
-                curstat=h.user_status
+                curstat = h.user_status
             else:
-                curstat='offline'
-            current_users_status[b.username]=curstat
+                curstat = 'offline'
+            current_users_status[b.username] = curstat
 
         return current_users_status
 
@@ -385,23 +470,23 @@ class ChatConsumer(WebsocketConsumer):
         """
             Update status on/off
         """
-        r1=Room.objects.get(name=self.room_name)
-        u1=User.objects.get(username=user_name)
-        super_part=OnlineParticipanteRoom.objects.create(
-                            user=u1, room=r1, user_status=status)
+        r1 = Room.objects.get(name=self.room_name)
+        u1 = User.objects.get(username=user_name)
+        super_part = OnlineParticipanteRoom.objects.create(
+            user=u1, room=r1, user_status=status)
         super_part.save()
 
     def reset_participants_status(self):
         """
             При первом запуске сервера, принудительный сброс статусов участников на offline
         """
-        allRooms=Room.objects.all()
+        allRooms = Room.objects.all()
         for cr in allRooms:
-            r1=Room.objects.get(name=cr.name)
-            user_room_list=r1.participante.all()
+            r1 = Room.objects.get(name=cr.name)
+            user_room_list = r1.participante.all()
             for u1 in user_room_list:
-                u1=User.objects.get(username=u1.username)
-                super_part=OnlineParticipanteRoom.objects.create(
+                u1 = User.objects.get(username=u1.username)
+                super_part = OnlineParticipanteRoom.objects.create(
                     user=u1, room=r1, user_status='offline')
                 super_part.save()
 
