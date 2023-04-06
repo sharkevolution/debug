@@ -149,6 +149,7 @@ class ChatConsumer(WebsocketConsumer):
                                 'type': 'chat_message',
                                 'user': self.user.username,  # new
                                 'message': f'{user_name} was Delete from this room...',
+                                'message_id': -1,
                             }
                         )
                     else:

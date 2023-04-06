@@ -386,8 +386,12 @@ function drawMessage(data, user_view='', chatlog_value='') {
     }else{
         var sms = data.message
     }
+
+    let box = ""
+    if (data.message_id > 0) {box = `box-${data.message_id}`}
+
     const messageItem = `
-            <li class="message ${position} box" id="box-${data.message_id}">
+            <li class="message ${position} box" id=${box}>
                 <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
                         <div class="text"> ${sms}<br>
@@ -396,9 +400,6 @@ function drawMessage(data, user_view='', chatlog_value='') {
                 </div>
             </li>`;
     messageList.innerHTML += messageItem;
-
-    // let change_status_html = document.getElementById("is_read");
-    // change_status_html.setAttribute("class", "bi bi-check");
 
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
@@ -464,16 +465,11 @@ function throttle(callee, timeout) {
 function wheel_up (event) {
     if (event.deltaY < 0) {
 
+    console.log(super_box_is_read);
     // Отправка запроса на обновление
     chatSocket.send(JSON.stringify({
         "messages_history": {'navigation_back': super_box_is_read},
     }));
-
-        // var ul = document.getElementById("messages");
-        // var li0 = ul.children[0];
-        // if (li0) {
-        //     li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
-        // };
         console.log('scrolling up');
     }
 }
@@ -515,11 +511,17 @@ function scrollTracking(entries) {
     let box_status = [];
     for (const key of Object.keys(displayed)) {
         
-        if (displayed[key]) {
-            box_status[i] = key;
-            i += 1; 
-        };
+        if (key.length > 0) {
+            if (displayed[key]) {
+                box_status[i] = key;
+                i += 1; 
+            }
+        }
     }
+    if (box_status.length > 0) {
+        super_box_is_read = box_status;
+    }
+}
 
     // const set1 = new Set(box_status);
     // const set2 = new Set(super_box_is_read);
@@ -527,7 +529,7 @@ function scrollTracking(entries) {
     // let dif = Array.from(different_set);
     
     // super_box_is_read = super_box_is_read.concat(dif);
-    super_box_is_read = box_status;
+
     // console.log('super_box_is_read: ' + super_box_is_read);
 
     // if (dif.length > 0) {
@@ -537,7 +539,7 @@ function scrollTracking(entries) {
     //     }));
         // console.log('different set is read: ' + dif);
     // }
-}
+
 
 // get difference sets for status messages 'is_read'
 // function getDifference(setA, setB) {
