@@ -377,17 +377,32 @@ function wrap_history(data){
                         </div>
                     </li>`;
 
-            // if (ul.length > 0) {
-            let li0 = ul.children[0];
-            li0.insertAdjacentHTML("beforeBegin", messageItem);
-            // }else{
-                // document.getElementById("messages").innerHTML += messageItem;
-            // }
+            ulbox = document.getElementById("messages");
+
+            if (data.direction == 'back'){
+
+                if (ul.length > 0) {
+                    let li0 = ulbox.children[0];
+                    li0.insertAdjacentHTML("beforeBegin", messageItem);
+                }
+                else{
+                    ulbox.innerHTML += messageItem;
+                }
+            }
+
+            if (data.direction == 'forward'){
+                // if (ul.length > 0) {
+                //     let li0 = ulbox.children[0];
+                //     li0.insertAdjacentHTML("beforeBegin", messageItem);
+                // }
+                // else{
+                    ulbox.innerHTML += messageItem;
+                }           
 
             // // Callback Observer API Intersection
             const boxes = document.querySelectorAll('.box');
             boxes.forEach(element => observer.observe(element));
-        };
+        }
 
     };
 }

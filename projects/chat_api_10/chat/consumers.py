@@ -264,26 +264,28 @@ class ChatConsumer(WebsocketConsumer):
 
             for b in messages_is_read:
                 pk = b.split('-')
-                whois_message = Message.objects.get(id=int(pk[1]))
-                you_ = str(self.user.username)
-                from_ = str(whois_message.user)
-                to_ = str(whois_message.recipient)
+                pull = Message.objects.filter(id=int(pk[1]))
+                if pull:
+                    whois_message = Message.objects.get(id=int(pk[1]))
+                    you_ = str(self.user.username)
+                    from_ = str(whois_message.user)
+                    to_ = str(whois_message.recipient)
 
-                if not you_ == from_ and you_ == to_:
-                    # частное сообщение
-                    # наблюдатель (you) не равен от кого (from) и (you) равен (to)
-                    Message.objects.filter(id=int(pk[1])).update(is_read=True)
+                    if not you_ == from_ and you_ == to_:
+                        # частное сообщение
+                        # наблюдатель (you) не равен от кого (from) и (you) равен (to)
+                        Message.objects.filter(id=int(pk[1])).update(is_read=True)
 
-                    update_is_read[b] = True
-                    # logging.warning('Update')
+                        update_is_read[b] = True
+                        # logging.warning('Update')
 
-                else:
-                    # Сообщение публичное для группы
-                    update_is_read[b] = whois_message.is_read
+                    else:
+                        # Сообщение публичное для группы
+                        update_is_read[b] = whois_message.is_read
 
-                # logging.warning(f'You: {self.user.username}: {str(b)}')
-                # logging.warning(f'from_: {from_}')
-                # logging.warning(f'to_: {to_}')
+                    # logging.warning(f'You: {self.user.username}: {str(b)}')
+                    # logging.warning(f'from_: {from_}')
+                    # logging.warning(f'to_: {to_}')
 
             unread = Message.objects.filter(Q(room=self.room)
                                             & (Q(is_read=False ) & Q(status_text='private'))
@@ -314,6 +316,7 @@ class ChatConsumer(WebsocketConsumer):
                         'type': 'history_navigation',
                         'user': self.user.username,
                         'update_navigation_back': hst,
+                        'direction': 'back',
                     }
                 )
 
@@ -325,7 +328,7 @@ class ChatConsumer(WebsocketConsumer):
                 logging.warning('navigation_open_page')
                 hst_open_page = self.get_messages_navigation_open_page()
 
-                # logging.warning(hst_open_page)                
+                logging.warning(hst_open_page)                
 
                 # send history messages when user open/reload page
                 async_to_sync(self.channel_layer.group_send)(
@@ -333,7 +336,8 @@ class ChatConsumer(WebsocketConsumer):
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
-                        'update_navigation_back': hst_open_page
+                        'update_navigation_back': hst_open_page,
+                        'direction': 'forward',
                     }
                 )
 
@@ -343,24 +347,35 @@ class ChatConsumer(WebsocketConsumer):
         you_ = str(self.user.username)
 
         # Получаем номер первого и последнего сообщения
+        hiback = []
         cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
-        first_id = cursor_range[0].cursor_begin_message_id
-        last_id = cursor_range[0].cursor_end_message_id
+        if cursor_range:
+            first_id = cursor_range[0].cursor_begin_message_id
+            # Найти сообщений равное или меньше указанной даты и времени
+            
+            el = Message.objects.filter(id=first_id)
+            if el:
+                first_element = Message.objects.get(id=first_id)
+
+                hiback = Message.objects.filter(Q(room=self.room)
+                                                & Q(created__gte=first_element.created)
+                                                & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
+            else:
+            
+                hiback = Message.objects.filter(Q(room=self.room)
+                                    & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
+            
+            logging.warning(f'Cursor range: {len(hiback)}')
+        else:
+            
+            hiback = Message.objects.filter(Q(room=self.room)
+                                & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
+            
+            logging.warning(f'No cursor: {len(hiback)}')
 
         history_for_user = []
-
-        # Найти сообщений равное или меньше указанной даты и времени
-        first_element = Message.objects.filter(id=first_id)
-
-        if first_element:
-            first_element = Message.objects.get(id=first_id)
-
-            hiback = Message.objects.filter(Q(room=self.room)
-                                            & Q(created__lte=first_element.created)
-                                            & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')
-
-            # logging.warning(str(hiback))
-
+        
+        if hiback:
             for b in hiback:
                 from_ = str(b.user.username)
                 to_ = str(b.recipient)
@@ -383,6 +398,8 @@ class ChatConsumer(WebsocketConsumer):
 
             # logging.warning(str(history_for_user))
             # logging.warning('history_for_user: ' + str(len(history_for_user)))
+
+        # logging.warning(history_for_user.reverse())
 
         return history_for_user
 
