@@ -158,7 +158,7 @@ function connect() {
 
         console.log("Start History");
         // Send update messages delivered status, time interval every 3sec 
-        let interval = setInterval(()=> update_messages_is_read(chatSocket), 3000);
+        let interval = setInterval(()=> update_messages_is_read(chatSocket), 2000);
     }
 
     chatSocket.onclose = function (e) {
@@ -177,6 +177,7 @@ function connect() {
                 // chatLog.value += data.user + ": " + data.message + "\n";
                 user_view = data.user;
                 drawMessage(data, user_view);
+                messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "user_list":
                 // participantes list and status
@@ -231,12 +232,11 @@ function connect() {
             
             case "update_messages_is_read":
                 
-                // console.log(data.messages_is_read);
-
                 for (const key of Object.keys(data.messages_is_read)) {
 
                     // console.log(data.messages_is_read[key]);
-                    if (data.messages_is_read[key] == true){
+                    var ms = data.messages_is_read[key]
+                    if (ms[0] == true){
                         var up_status = "bi bi-check-all"
                     }else{
                         var up_status = "bi bi-check"
@@ -244,11 +244,13 @@ function connect() {
                     let box = document.getElementById(key);
                     let child = box.children;
                     let child_is_read = child[1].children[0].children[1];
+                    let child_datetime = child[1].children[0].children[2];
 
                     let child_avatar = child[0];
                     let avatar = child_avatar.textContent;
                     if (avatar == echoUser){
-                        child_is_read.setAttribute("class", up_status);                        
+                        child_is_read.setAttribute("class", up_status);
+                        child_datetime.innerHTML = `<p>${ms[1]}</p>`;
                     }
 
                     // Update unread messages
@@ -257,8 +259,7 @@ function connect() {
                 };
                 break;
             case "history_navigation":
-                // Проверить и добавить истрорию, навигация по времени назад 
-                // console.log('Place for add handler history_navigation');
+                // console.log("history_navigation");
                 wrap_history(data);
                 break;
 
@@ -266,13 +267,6 @@ function connect() {
                 console.error("Unknown message type! " + data.type);
                 break;
         }
-
-        // var chatEm = convertEm(1.5);
-        // scroll 'chatLog' to the bottom
-        // if (chatLog.scrollHeight / chatEm >= 14) {
-        //     chatScroll.textContent = 100;
-        // };
-
     };
 
     chatSocket.onerror = function (err) {
@@ -291,30 +285,6 @@ onlineUsersSelector.onchange = function () {
     chatMessageInput.focus();
 };
 
-// Converter Em and Rem
-function getElementFontSize(context) {
-    // Returns a number
-    return parseFloat(
-        // of the computed font-size, so in px
-        getComputedStyle(
-            // for the given context
-            context ||
-            // or the root <html> element
-            document.documentElement
-        ).fontSize
-    );
-}
-
-// Convert Rem CSS to px
-function convertRem(value) {
-    return convertEm(value);
-}
-
-// Convert Em CSS to px 
-function convertEm(value, context) {
-    return value * getElementFontSize(context);
-}
-
 // Clear onlineUsersSelectorAdd
 function clear_onlineUsersSelectorAdd() {
     var select = document.getElementById("onlineUsersSelector"),
@@ -327,9 +297,9 @@ function clear_onlineUsersSelectorAdd() {
 
 function wrap_history(data){
 
-    console.log('wrap_history');
+    // console.log('wrap_history');
 
-    for (const key of data.update_navigation_back) {
+    for (const key of data.update_navigation) {
         
         history_data = key
         // console.log('Key: ' + key);
@@ -362,26 +332,28 @@ function wrap_history(data){
             // console.log( !(history_data.user == history_data.recipient) && history_data.recipient == echoUser);
         }
 
-        console.log(`box-${history_data}`);
-        box_exists = document.getElementById(`box-${key.id}`);
+        box_exists = document.getElementById(`box-${history_data.id}`);
         if (!box_exists) {
-
+            if (history_data.is_read == true){
+                var up_status = "bi bi-check-all"
+            }else{
+                var up_status = "bi bi-check"
+            }
             const messageItem = `
                     <li class="message ${position} box" id="box-${history_data.id}">
                         <div class="avatar">${user_view}</div>
                             <div class="text_wrapper">
                                 <div class="text"> ${chatLog_value}<br>
-                                <div id="is_read"></div>
+                                <div id="is_read" class="${up_status}"></div>
                                 <div id="is_created"><p>${history_data.created}</p></div>
                             </div>
                         </div>
                     </li>`;
 
-            ulbox = document.getElementById("messages");
+            var ulbox = document.getElementById("messages");
 
             if (data.direction == 'back'){
-
-                if (ul.length > 0) {
+                if (ulbox.getElementsByTagName("li").length > 0) {
                     let li0 = ulbox.children[0];
                     li0.insertAdjacentHTML("beforeBegin", messageItem);
                 }
@@ -389,16 +361,9 @@ function wrap_history(data){
                     ulbox.innerHTML += messageItem;
                 }
             }
-
             if (data.direction == 'forward'){
-                // if (ul.length > 0) {
-                //     let li0 = ulbox.children[0];
-                //     li0.insertAdjacentHTML("beforeBegin", messageItem);
-                // }
-                // else{
                     ulbox.innerHTML += messageItem;
-                }           
-
+            }           
             // // Callback Observer API Intersection
             const boxes = document.querySelectorAll('.box');
             boxes.forEach(element => observer.observe(element));
@@ -420,15 +385,27 @@ function drawMessage(data, user_view='', chatlog_value='') {
         var sms = data.message
     }
 
+    if (data.message_is_read == true){
+        var up_status = "bi bi-check-all"
+    }else{
+        var up_status = "bi bi-check"
+    }
+
     let box = ""
-    if (data.message_id > 0) {box = `box-${data.message_id}`}
+    let created = ""
+    if (data.message_id > 0) {
+        box = `box-${data.message_id}`
+        created = data.message_created
+    }
+    console.log(data.message_id);
 
     const messageItem = `
-            <li class="message ${position} box" id=${box}>
+            <li class="message ${position}" id="${box}">
                 <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
-                        <div class="text"> ${sms}<br>
-                        <div id="is_read"></div>
+                        <div class="text">${sms}<br>
+                        <div id="is_read" class="${up_status}></div>
+                        <div id="is_created"><p>${created}</p></div>
                     </div>
                 </div>
             </li>`;
@@ -437,32 +414,6 @@ function drawMessage(data, user_view='', chatlog_value='') {
     // Callback Observer API Intersection
     const boxes = document.querySelectorAll('.box');
     boxes.forEach(element => observer.observe(element));
-}
-
-chatInsertLi.onclick = function () {
-    let li0 = ul.children[0];
-    li0.insertAdjacentHTML("beforeBegin", "<li>3</li><li>4</li>");
-}
-
-// const scroller = document.querySelector("#scroller");
-const output = document.querySelector("#output");
-var ul = document.getElementById("messages");
-var nextItem = 1;
-
-// Add New messages bottom chat 
-var loadMore = function () {
-
-    // Отправка запроса на обновление
-    chatSocket.send(JSON.stringify({
-        "messages_history": {'navigation_forward': super_box_is_read},
-    }));
-
-    console.log('scrolling down');
-    for (var i = 0; i < 5; i++) {
-        var item = document.createElement('li');
-        item.innerText = 'Item ' + nextItem++;
-        messageList.appendChild(item);
-    }
 }
 
 // Set up the throttler 
@@ -496,29 +447,25 @@ function throttle(callee, timeout) {
   
 // handle event WHELL UP mouse in the chat
 function wheel_up (event) {
-    if (event.deltaY < 0) {
-
-    // console.log(super_box_is_read);
-    // Отправка запроса на обновление
-    chatSocket.send(JSON.stringify({
-        "messages_history": {'navigation_back': super_box_is_read},
-    }));
-        console.log('scrolling up');
-    }
-}
-messageList.addEventListener('wheel', throttle(wheel_up, 100)); 
-
-// handle event Scroll Chat
-function scrolling_chat(event) {
-    output.textContent = `scrollTop: ${messageList.scrollTop}`;
-    if (messageList.scrollTop + messageList.clientHeight >= messageList.scrollHeight) {
-        loadMore();
-    }
-    // Callback Observer API Intersection
+    
     const boxes = document.querySelectorAll('.box');
     boxes.forEach(element => observer.observe(element));
+
+    if (event.deltaY < 0) {
+        // console.log(super_box_is_read);
+        // Отправка запроса на обновление
+        chatSocket.send(JSON.stringify({
+            "messages_history": {'navigation_back': super_box_is_read},
+        }));
+        console.log('scrolling wheel up: ' + super_box_is_read);
+    }else{
+        chatSocket.send(JSON.stringify({
+            "messages_history": {'navigation_forward': super_box_is_read},
+        }));
+        console.log('scrolling wheel down: ' + super_box_is_read);
+    }
 }
-messageList.addEventListener('scroll', throttle(scrolling_chat, 100)); 
+messageList.addEventListener('wheel', throttle(wheel_up, 50)); 
 
 
 const debug = document.querySelector('.debug');
@@ -542,8 +489,7 @@ function scrollTracking(entries) {
     
     let i = 0;
     let box_status = [];
-    for (const key of Object.keys(displayed)) {
-        
+    for (const key of Object.keys(displayed)) {      
         if (key.length > 0) {
             if (displayed[key]) {
                 box_status[i] = key;
@@ -554,30 +500,6 @@ function scrollTracking(entries) {
     if (box_status.length > 0) {
         super_box_is_read = box_status;
     }
+    console.log("ScrollTracking: " + super_box_is_read);
 }
-
-    // const set1 = new Set(box_status);
-    // const set2 = new Set(super_box_is_read);
-    // let different_set = getDifference(set1, set2);
-    // let dif = Array.from(different_set);
-    
-    // super_box_is_read = super_box_is_read.concat(dif);
-
-    // console.log('super_box_is_read: ' + super_box_is_read);
-
-    // if (dif.length > 0) {
-    //     // Update base, status messages is_read
-    //     chatSocket.send(JSON.stringify({
-    //         "messages_is_read": dif,
-    //     }));
-        // console.log('different set is read: ' + dif);
-    // }
-
-
-// get difference sets for status messages 'is_read'
-// function getDifference(setA, setB) {
-//     return new Set(
-//       [...setA].filter(element => !setB.has(element))
-//     );
-//   }
   

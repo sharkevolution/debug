@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class ChatConsumer(WebsocketConsumer):
 
-    starting_server = 0  # Первый запуск сервера для
+    starting_server = 0  # Первый запуск
 
     def __init__(self, *args, **kwargs):
         super().__init__(args, kwargs)
@@ -207,6 +207,8 @@ class ChatConsumer(WebsocketConsumer):
                         'user': self.user.username,
                         'message': target_msg,
                         'message_id': last_text.id,
+                        'message_is_read': last_text.is_read,
+                        'message_created': last_text.created,
                         'message_status': last_text.is_read,  # Добавляем статус прочитано или нет
                     }
                 )
@@ -217,6 +219,8 @@ class ChatConsumer(WebsocketConsumer):
                     'target': target,
                     'message': target_msg,
                     'message_id': last_text.id,
+                    'message_is_read': last_text.is_read,
+                    'message_created': last_text.created,
                     'message_status': last_text.is_read,  # Добавляем статус, прочитано или нет
                 }))
 
@@ -231,7 +235,8 @@ class ChatConsumer(WebsocketConsumer):
             once_text = Message.objects.filter(user=self.user, recipient=self.user, status_text='public',
                                                room=self.room, content=message).order_by("created")
             last_text = once_text.last()
-            logging.warning(last_text.id)
+            # logging.warning(last_text.id)
+
             # send chat message event to the room
             async_to_sync(self.channel_layer.group_send)(
                 self.room_group_name,
@@ -240,14 +245,13 @@ class ChatConsumer(WebsocketConsumer):
                     'user': self.user.username,  # new
                     'message': message,
                     'message_id': last_text.id,
+                    'message_is_read': last_text.is_read,
+                    'message_created': last_text.created,
                     'message_status': False,  # публичная комната участник 1 или больше > 2
                 }
             )
 
-        if echo := text_data_json.get('echo'):
-
-            logging.warning('Echo');
-            
+        if text_data_json.get('echo'):
             # send private Echo Username to the target
             async_to_sync(self.channel_layer.group_send)(
                 f'inbox_{self.user.username}',
@@ -261,6 +265,11 @@ class ChatConsumer(WebsocketConsumer):
             # Get status 'is_read' messages and Update into base
 
             update_is_read = {}
+            
+            first_list = []
+            for b in messages_is_read:
+                pk = b.split('-')
+                first_list.append(int(pk[1]))
 
             for b in messages_is_read:
                 pk = b.split('-')
@@ -270,26 +279,29 @@ class ChatConsumer(WebsocketConsumer):
                     you_ = str(self.user.username)
                     from_ = str(whois_message.user)
                     to_ = str(whois_message.recipient)
+                    dc = whois_message.created
+                    str_date_iso = dc.strftime('%Y-%m-%d %H:%M:%S')
 
                     if not you_ == from_ and you_ == to_:
                         # частное сообщение
                         # наблюдатель (you) не равен от кого (from) и (you) равен (to)
                         Message.objects.filter(id=int(pk[1])).update(is_read=True)
 
-                        update_is_read[b] = True
+                        update_is_read[b] = [True, str_date_iso] 
                         # logging.warning('Update')
 
                     else:
                         # Сообщение публичное для группы
-                        update_is_read[b] = whois_message.is_read
+                        update_is_read[b] = [whois_message.is_read, str_date_iso]
 
                     # logging.warning(f'You: {self.user.username}: {str(b)}')
                     # logging.warning(f'from_: {from_}')
                     # logging.warning(f'to_: {to_}')
 
+            # Не прочитанные
             unread = Message.objects.filter(Q(room=self.room)
                                             & (Q(is_read=False ) & Q(status_text='private'))
-                                            & (Q(user=self.user) | Q(recipient=self.user))).order_by('created')
+                                            & (Q(recipient=self.user.id))).order_by('created')
             unread_id = []
             for b in unread:
                 unread_id.append(b.id)
@@ -305,6 +317,7 @@ class ChatConsumer(WebsocketConsumer):
                 }
             )
         if history := text_data_json.get("messages_history"):
+
             if navigation := history.get('navigation_back'):
                 # logging.warning('navigation_back: ' + str(navigation))
                 hst = self.get_messages_navigation_back(navigation)
@@ -315,20 +328,14 @@ class ChatConsumer(WebsocketConsumer):
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
-                        'update_navigation_back': hst,
+                        'update_navigation': hst,
                         'direction': 'back',
                     }
                 )
 
             if navigation := history.get('navigation_forward'):
-                logging.warning('navigation_forward: ' + str(navigation))
-                self.get_messages_navigation_forward(navigation)
-
-            if navigation := history.get('navigation_open_page'):
-                logging.warning('navigation_open_page')
-                hst_open_page = self.get_messages_navigation_open_page()
-
-                logging.warning(hst_open_page)                
+                # logging.warning('navigation_forward: ' + str(navigation))
+                hst_open_page = self.get_messages_navigation_forward(navigation)
 
                 # send history messages when user open/reload page
                 async_to_sync(self.channel_layer.group_send)(
@@ -336,78 +343,29 @@ class ChatConsumer(WebsocketConsumer):
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
-                        'update_navigation_back': hst_open_page,
+                        'update_navigation': hst_open_page,
                         'direction': 'forward',
                     }
                 )
 
-    def get_messages_navigation_open_page(self):
-        """ Выбрать последние просмотренные страницы
-        """
-        you_ = str(self.user.username)
+            if navigation := history.get('navigation_open_page'):
+                # logging.warning('navigation_open_page')
+                hst_open_page = self.get_messages_navigation_open_page()              
 
-        # Получаем номер первого и последнего сообщения
-        hiback = []
-        cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
-        if cursor_range:
-            first_id = cursor_range[0].cursor_begin_message_id
-            # Найти сообщений равное или меньше указанной даты и времени
-            
-            el = Message.objects.filter(id=first_id)
-            if el:
-                first_element = Message.objects.get(id=first_id)
-
-                hiback = Message.objects.filter(Q(room=self.room)
-                                                & Q(created__gte=first_element.created)
-                                                & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
-            else:
-            
-                hiback = Message.objects.filter(Q(room=self.room)
-                                    & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
-            
-            logging.warning(f'Cursor range: {len(hiback)}')
-        else:
-            
-            hiback = Message.objects.filter(Q(room=self.room)
-                                & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[0:5]
-            
-            logging.warning(f'No cursor: {len(hiback)}')
-
-        history_for_user = []
-        
-        if hiback:
-            for b in hiback:
-                from_ = str(b.user.username)
-                to_ = str(b.recipient)
-                # logging.warning(f'1You_: {you_} to_: {to_}')
-                if you_ == from_ or you_ == to_ or b.status_text == 'public':
-                    # logging.warning(f'2You_: {you_} to_: {to_}')
-                    str_date_iso = b.created.strftime('%Y-%m-%d %H:%M:%S')
-
-                    chunk = {
-                        'id': b.id,
-                        'user': from_,
-                        'recipient': to_,
-                        'room': str(b.room),
-                        'content': str(b.content),
-                        'status_text': str(b.status_text),
-                        'is_read': str(b.is_read),
-                        'created': str(str_date_iso),
+                # send history messages when user open/reload page
+                async_to_sync(self.channel_layer.group_send)(
+                    f'inbox_{self.user.username}',
+                    {
+                        'type': 'history_navigation',
+                        'user': self.user.username,
+                        'update_navigation': hst_open_page,
+                        'direction': 'forward',
                     }
-                    history_for_user.append(chunk)
+                )
 
-            # logging.warning(str(history_for_user))
-            # logging.warning('history_for_user: ' + str(len(history_for_user)))
-
-        # logging.warning(history_for_user.reverse())
-
-        return history_for_user
-
-    def get_messages_navigation_back(self, nav_list):
-
-        you_ = str(self.user.username)
-
-        logging.warning('nav_list: ' + str(nav_list))
+    def list_id_cursor(self, nav_list):
+        
+        # logging.warning('nav_list: ' + str(nav_list))
         first_list = []
         for b in nav_list:
             pk = b.split('-')
@@ -426,45 +384,82 @@ class ChatConsumer(WebsocketConsumer):
                                                     room=self.room, 
                                                     cursor_begin_message_id = first_id,
                                                     cursor_end_message_id = last_id,)
-
-
-        # Найти сообщений равное или меньше указанной даты и времени
-        first_element = Message.objects.get(id=first_id)
-
-        hiback = Message.objects.filter(Q(room=self.room)
-                                        & Q(created__lte=first_element.created)
-                                        & (Q(user=self.user) | Q(recipient=self.user))).order_by('-created')[:3]
-
-        # logging.warning(str(hiback))
+        
+        return first_id
+    
+    def hibackforward(self, hibf):
+        
         history_for_user = []
+       
+        if hibf:
+            you_ = str(self.user.username)
+            
+            for b in hibf:
+                from_ = str(b.user.username)
+                to_ = str(b.recipient)
 
-        for b in hiback:
-            from_ = str(b.user.username)
-            to_ = str(b.recipient)
-            # logging.warning(f'1You_: {you_} to_: {to_}')
-            if you_ == from_ or you_ == to_ or b.status_text == 'public':
-                # logging.warning(f'2You_: {you_} to_: {to_}')
-                str_date_iso = b.created.strftime('%Y-%m-%d %H:%M:%S')
-
-                chunk = {
-                    'id': b.id,
-                    'user': from_,
-                    'recipient': to_,
-                    'room': str(b.room),
-                    'content': str(b.content),
-                    'status_text': str(b.status_text),
-                    'is_read': str(b.is_read),
-                    'created': str(str_date_iso),
-                }
-                history_for_user.append(chunk)
-
-        # logging.warning(str(history_for_user))
-        # logging.warning('history_for_user: ' + str(len(history_for_user)))
-
+                if you_ == from_ or you_ == to_ or b.status_text == 'public':
+                    chunk = {
+                        'id': b.id,
+                        'user': from_,
+                        'recipient': to_,
+                        'room': str(b.room),
+                        'content': str(b.content),
+                        'status_text': str(b.status_text),
+                        'is_read': b.is_read,
+                        'created': b.created.strftime('%Y-%m-%d %H:%M:%S'),
+                    }
+                    history_for_user.append(chunk)
         return history_for_user
 
+    def get_messages_navigation_open_page(self):
+        """ Открыли страницу, загружаем историю
+        """
+        # Получаем номер первого и последнего сообщения
+        hiback = []
+        cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
+        if cursor_range:
+            first_id = cursor_range[0].cursor_begin_message_id
+            # Найти сообщений больше или равное указанной даты и времени
+            if Message.objects.filter(id=first_id):
+                first_element = Message.objects.get(id=first_id)
+                hiback = Message.objects.filter(Q(room=self.room)
+                                                & Q(created__gte=first_element.created)
+                                                & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('created')
+            else:
+                hiback = Message.objects.filter(Q(room=self.room)
+                                    & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('created')
+        else:
+            hiback = Message.objects.filter(Q(room=self.room)
+                                & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('created')
+
+        return self.hibackforward(hiback)
+
     def get_messages_navigation_forward(self, nav_list):
-        pass
+        hiback = []
+        first_id = self.list_id_cursor(nav_list)
+        if Message.objects.filter(id=first_id):
+            # Сообщения равные или меньше указанной даты и времени
+            first_element = Message.objects.get(id=first_id)
+            hiback = Message.objects.filter(Q(room=self.room)
+                                            & Q(created__gte=first_element.created)
+                                            & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('created')
+        else:
+            hiback = Message.objects.filter(Q(room=self.room)
+                                & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('created')
+
+        return self.hibackforward(hiback)
+
+    def get_messages_navigation_back(self, nav_list):
+
+        first_id = self.list_id_cursor(nav_list)
+        # Сообщения равные или меньше указанной даты и времени
+        first_element = Message.objects.get(id=first_id)
+        hiback = Message.objects.filter(Q(room=self.room)
+                                        & Q(created__lte=first_element.created)
+                                        & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('-created')[:3]
+
+        return self.hibackforward(hiback)
 
     def get_last_status_users(self):
         """
