@@ -421,7 +421,7 @@ class ChatConsumer(WebsocketConsumer):
         cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
         if cursor_range:
             first_id = cursor_range[0].cursor_begin_message_id
-            logging.warning('first_id: ' + str(first_id))
+            # logging.warning('first_id: ' + str(first_id))
             # Найти сообщений больше или равное указанной даты и времени
             if Message.objects.filter(id=first_id):
                 first_element = Message.objects.get(id=first_id)
@@ -461,7 +461,7 @@ class ChatConsumer(WebsocketConsumer):
         first_id = min(first_list)
         # Сообщения равные или меньше указанной даты и времени
         first_element = Message.objects.get(id=first_id)
-        logging.warning('first_id: ' + str(first_id))
+        # logging.warning('first_id: ' + str(first_id))
         hiback = Message.objects.filter(Q(room=self.room)
                                         & Q(created__lte=first_element.created)
                                         & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('-created')[:2]

@@ -157,8 +157,8 @@ function connect() {
         chat_open_page_history();
 
         console.log("Start History");
-        // Send update messages delivered status, time interval every 3sec 
-        let interval = setInterval(()=> update_messages_is_read(chatSocket), 2000);
+        // Send update messages delivered status, time interval every 4sec 
+        let interval = setInterval(()=> update_messages_is_read(chatSocket), 4000);
     }
 
     chatSocket.onclose = function (e) {
@@ -176,8 +176,9 @@ function connect() {
             case "chat_message":
                 // chatLog.value += data.user + ": " + data.message + "\n";
                 user_view = data.user;
-                drawMessage(data, user_view);
-                messageList.scrollTop = messageList.scrollHeight;
+                var new_message = '';
+                drawMessage(data, user_view, new_message);
+                // messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "user_list":
                 // participantes list and status
@@ -205,14 +206,16 @@ function connect() {
                 break;
             case "private_message":
                 chatLog_value = "PM from " + data.user + ": " + data.message + "\n";
-                user_view = data.user;
-                drawMessage(data, user_view, chatLog_value);
-                messageList.scrollTop = messageList.scrollHeight;
+                var user_view = data.user;
+                var new_message = 'New!';
+                drawMessage(data, user_view, chatLog_value, new_message);
+                // messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "private_message_delivered":
                 chatLog_value = "PM to " + data.target + ": " + data.message + "\n";
-                user_view = echoUser;
-                drawMessage(data, user_view, chatLog_value);
+                var user_view = echoUser;
+                var new_message = '';
+                drawMessage(data, user_view, chatLog_value, new_message);
                 messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "private_quit":
@@ -239,14 +242,16 @@ function connect() {
                     // console.log(data.messages_is_read[key]);
                     var ms = data.messages_is_read[key]
                     if (ms[0] == true){
-                        var up_status = "bi bi-check-all"
+                        var up_status = "bi bi-check-all";
                     }else{
-                        var up_status = "bi bi-check"
+                        var up_status = "bi bi-check";
+
                     }
                     let box = document.getElementById(key);
                     let child = box.children;
                     let child_is_read = child[1].children[0].children[1];
                     let child_datetime = child[1].children[0].children[2];
+                    let child_new_text = child[1].children[0].children[3];
 
                     let child_avatar = child[0];
                     let avatar = child_avatar.textContent;
@@ -254,6 +259,7 @@ function connect() {
                         child_is_read.setAttribute("class", up_status);
                         child_datetime.innerHTML = `<p>${ms[1]}</p>`;
                     }
+                    if (ms[0] == true){child_new_text.innerHTML = `<p></p>`;}
 
                     // Update unread messages
                     chatScroll.textContent = data.messages_unread.length;
@@ -304,7 +310,15 @@ function clear_onlineUsersSelectorAdd() {
 
 function wrap_history(data){
     for (const key of data.update_navigation) {
-        history_data = key        
+        history_data = key
+
+        if (history_data.is_read == true){
+            var up_status = "bi bi-check-all"
+        }else{
+            var up_status = "bi bi-check"
+        }
+        var new_message = '';
+
         // Add message to chat
         let position = 'left'; 
         if (history_data.user == echoUser) {position = 'right';}
@@ -318,7 +332,7 @@ function wrap_history(data){
             //private_message from
             chatLog_value = "PM from " + history_data.user + ": " + history_data.content + "\n";
             user_view = history_data.user;
-            // console.log('I am too');
+            if (history_data.is_read == false){ var new_message = 'New!';}            
         } else if 
             (history_data.recipient == history_data.user && history_data.recipient == echoUser) {
             //public message from
@@ -335,11 +349,7 @@ function wrap_history(data){
 
         box_exists = document.getElementById(`box-${history_data.id}`);
         if (!box_exists) {
-            if (history_data.is_read == true){
-                var up_status = "bi bi-check-all"
-            }else{
-                var up_status = "bi bi-check"
-            }
+
             const messageItem = `
                     <li class="message ${position} box" id="box-${history_data.id}">
                         <div class="avatar">${user_view}</div>
@@ -347,6 +357,7 @@ function wrap_history(data){
                                 <div class="text"> ${chatLog_value}<br>
                                 <div id="is_read" class="${up_status}"></div>
                                 <div id="is_created"><p>${history_data.created}</p></div>
+                                <div id="is_new"><p>${new_message}</p></div>
                             </div>
                         </div>
                     </li>`;
@@ -372,10 +383,10 @@ function wrap_history(data){
     };
 }
 
-function drawMessage(data, user_view='', chatlog_value='') {
+function drawMessage(data, user_view='', chatlog_value='', new_message) {
     // Add message to chat
     let position = 'left'; 
-    if (user_view === echoUser) {
+    if (user_view == echoUser) {
         position = 'right';
     }
 
@@ -400,12 +411,13 @@ function drawMessage(data, user_view='', chatlog_value='') {
     console.log(data.message_id);
 
     const messageItem = `
-            <li class="message ${position}" id="${box}">
+            <li class="message ${position} box" id="${box}">
                 <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
                         <div class="text">${sms}<br>
                         <div id="is_read" class="${up_status}"></div>
                         <div id="is_created"><p>${created}</p></div>
+                        <div id="is_new"><p>${new_message}</p></div>
                     </div>
                 </div>
             </li>`;

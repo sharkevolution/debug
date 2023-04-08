@@ -24,6 +24,7 @@ class ChatConsumer(WebsocketConsumer):
         self.user = None
         self.user_id = None
         self.user_inbox = None
+        self.room_user_inbox = None
 
     def connect(self):
         self.room_name = self.scope['url_route']['kwargs']['room_name']
@@ -32,6 +33,7 @@ class ChatConsumer(WebsocketConsumer):
         self.user = self.scope['user']  # new
         self.user_id = self.scope["session"]["_auth_user_id"]  # Sitala
         self.user_inbox = f'inbox_{self.user.username}'  # new
+        self.room_user_inbox = f'inbox_{self.room.name}_{self.user.username}'  # new
 
         ChatConsumer.starting_server += 1
         if ChatConsumer.starting_server == 1:
@@ -43,10 +45,11 @@ class ChatConsumer(WebsocketConsumer):
         self.accept()
 
         if self.user.is_authenticated:
+            logging.warning(self.room_user_inbox)
             # -------------------- new --------------------
             # create a user inbox for private messages
             async_to_sync(self.channel_layer.group_add)(
-                self.user_inbox,
+                self.room_user_inbox,
                 self.channel_name,
             )
             # join the room group
@@ -90,7 +93,7 @@ class ChatConsumer(WebsocketConsumer):
             # -------------------- new --------------------
             # delete the user inbox for private messages
             async_to_sync(self.channel_layer.group_discard)(
-                self.user_inbox,
+                self.room_user_inbox,
                 self.channel_name,
             )
             # send the leave event to the room and Update status on/off
@@ -135,7 +138,7 @@ class ChatConsumer(WebsocketConsumer):
 
                         # Отправляем клиенту команду на выход из комнаты
                         async_to_sync(self.channel_layer.group_send)(
-                            f'inbox_{user_name}',
+                            f'inbox_{self.room.name}_{user_name}',
                             {
                                 'type': 'private_quit',
                                 'user': user_name,
@@ -150,6 +153,9 @@ class ChatConsumer(WebsocketConsumer):
                                 'user': self.user.username,  # new
                                 'message': f'{user_name} was Delete from this room...',
                                 'message_id': -1,
+                                'message_is_read': False,
+                                'message_created': "",
+                                'message_status': False,  # публичная комната участник 1 или больше > 2
                             }
                         )
                     else:
@@ -198,17 +204,18 @@ class ChatConsumer(WebsocketConsumer):
                                                    room=self.room, content=target_msg).order_by("created")
                 last_text = once_text.last()
                 logging.warning(last_text.id)
+                dc = last_text.created
 
                 # send private message to the target
                 async_to_sync(self.channel_layer.group_send)(
-                    f'inbox_{target}',
+                    f'inbox_{self.room.name}_{target}',
                     {
                         'type': 'private_message',
                         'user': self.user.username,
                         'message': target_msg,
                         'message_id': last_text.id,
                         'message_is_read': last_text.is_read,
-                        'message_created': last_text.created,
+                        'message_created': str(dc.strftime('%Y-%m-%d %H:%M:%S')),
                         'message_status': last_text.is_read,  # Добавляем статус прочитано или нет
                     }
                 )
@@ -220,7 +227,7 @@ class ChatConsumer(WebsocketConsumer):
                     'message': target_msg,
                     'message_id': last_text.id,
                     'message_is_read': last_text.is_read,
-                    'message_created': last_text.created,
+                    'message_created': str(dc.strftime('%Y-%m-%d %H:%M:%S')),
                     'message_status': last_text.is_read,  # Добавляем статус, прочитано или нет
                 }))
 
@@ -236,6 +243,7 @@ class ChatConsumer(WebsocketConsumer):
                                                room=self.room, content=message).order_by("created")
             last_text = once_text.last()
             # logging.warning(last_text.id)
+            dc = last_text.created
 
             # send chat message event to the room
             async_to_sync(self.channel_layer.group_send)(
@@ -246,7 +254,7 @@ class ChatConsumer(WebsocketConsumer):
                     'message': message,
                     'message_id': last_text.id,
                     'message_is_read': last_text.is_read,
-                    'message_created': last_text.created,
+                    'message_created': str(dc.strftime('%Y-%m-%d %H:%M:%S')),
                     'message_status': False,  # публичная комната участник 1 или больше > 2
                 }
             )
@@ -254,7 +262,7 @@ class ChatConsumer(WebsocketConsumer):
         if text_data_json.get('echo'):
             # send private Echo Username to the target
             async_to_sync(self.channel_layer.group_send)(
-                f'inbox_{self.user.username}',
+                f'inbox_{self.room.name}_{self.user.username}',
                 {
                     'type': 'user_echo',
                     'user': self.user.username,
@@ -265,11 +273,7 @@ class ChatConsumer(WebsocketConsumer):
             # Get status 'is_read' messages and Update into base
 
             update_is_read = {}
-            
-            first_list = []
-            for b in messages_is_read:
-                pk = b.split('-')
-                first_list.append(int(pk[1]))
+            self.update_id_cursor(messages_is_read)
 
             for b in messages_is_read:
                 pk = b.split('-')
@@ -308,7 +312,7 @@ class ChatConsumer(WebsocketConsumer):
 
             # send Update status messages
             async_to_sync(self.channel_layer.group_send)(
-                f'inbox_{self.user.username}',
+                f'inbox_{self.room.name}_{self.user.username}',
                 {
                     'type': 'update_messages_is_read',
                     'user': self.user.username,
@@ -324,7 +328,7 @@ class ChatConsumer(WebsocketConsumer):
 
                 # send Update status messages
                 async_to_sync(self.channel_layer.group_send)(
-                    f'inbox_{self.user.username}',
+                    f'inbox_{self.room.name}_{self.user.username}',
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
@@ -339,7 +343,7 @@ class ChatConsumer(WebsocketConsumer):
 
                 # send history messages when user open/reload page
                 async_to_sync(self.channel_layer.group_send)(
-                    f'inbox_{self.user.username}',
+                    f'inbox_{self.room.name}_{self.user.username}',
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
@@ -354,23 +358,26 @@ class ChatConsumer(WebsocketConsumer):
 
                 # send history messages when user open/reload page
                 async_to_sync(self.channel_layer.group_send)(
-                    f'inbox_{self.user.username}',
+                    f'inbox_{self.room.name}_{self.user.username}',
                     {
                         'type': 'history_navigation',
                         'user': self.user.username,
                         'update_navigation': hst_open_page,
-                        'direction': 'forward',
+                        'direction': 'open',
                     }
                 )
 
-    def list_id_cursor(self, nav_list):
-        
-        # logging.warning('nav_list: ' + str(nav_list))
-        first_list = []
-        for b in nav_list:
+    def get_list_id(self, nav):
+        # logging.warning('nav_list: ' + str(nav))
+        flist = []
+        for b in nav:
             pk = b.split('-')
-            first_list.append(int(pk[1]))
+            flist.append(int(pk[1]))
+        return flist
 
+    def update_id_cursor(self, nav_list):
+        
+        first_list = self.get_list_id(nav_list)
         first_id = min(first_list)
         last_id = max(first_list)
 
@@ -420,6 +427,7 @@ class ChatConsumer(WebsocketConsumer):
         cursor_range = CursorParticipanteRoom.objects.filter(user=self.user, room=self.room,)
         if cursor_range:
             first_id = cursor_range[0].cursor_begin_message_id
+            # logging.warning('first_id: ' + str(first_id))
             # Найти сообщений больше или равное указанной даты и времени
             if Message.objects.filter(id=first_id):
                 first_element = Message.objects.get(id=first_id)
@@ -437,7 +445,10 @@ class ChatConsumer(WebsocketConsumer):
 
     def get_messages_navigation_forward(self, nav_list):
         hiback = []
-        first_id = self.list_id_cursor(nav_list)
+
+        first_list = self.get_list_id(nav_list)
+        first_id = min(first_list)
+
         if Message.objects.filter(id=first_id):
             # Сообщения равные или меньше указанной даты и времени
             first_element = Message.objects.get(id=first_id)
@@ -452,12 +463,14 @@ class ChatConsumer(WebsocketConsumer):
 
     def get_messages_navigation_back(self, nav_list):
 
-        first_id = self.list_id_cursor(nav_list)
+        first_list = self.get_list_id(nav_list)
+        first_id = min(first_list)
         # Сообщения равные или меньше указанной даты и времени
         first_element = Message.objects.get(id=first_id)
+        # logging.warning('first_id: ' + str(first_id))
         hiback = Message.objects.filter(Q(room=self.room)
                                         & Q(created__lte=first_element.created)
-                                        & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('-created')[:3]
+                                        & (Q(user=self.user.id) | Q(recipient=self.user.id) | Q(status_text='public'))).order_by('-created')[:2]
 
         return self.hibackforward(hiback)
 
