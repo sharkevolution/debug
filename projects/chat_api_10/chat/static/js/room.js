@@ -132,9 +132,9 @@ function chat_open_page_history() {
 };
 
 // Scroll textArea
-// chatScroll.onclick = function () {
-//     chatLog.scrollTop = chatLog.scrollHeight;
-// };
+chatScroll.onclick = function () {
+    messageList.scrollTop = messageList.scrollHeight;
+};
 
 // Update base, status messages is_read
 const update_messages_is_read = async(ws) =>{
@@ -207,11 +207,13 @@ function connect() {
                 chatLog_value = "PM from " + data.user + ": " + data.message + "\n";
                 user_view = data.user;
                 drawMessage(data, user_view, chatLog_value);
+                messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "private_message_delivered":
                 chatLog_value = "PM to " + data.target + ": " + data.message + "\n";
                 user_view = echoUser;
                 drawMessage(data, user_view, chatLog_value);
+                messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "private_quit":
                 // Пользователя удалили, выход из комнаты
@@ -261,6 +263,11 @@ function connect() {
             case "history_navigation":
                 // console.log("history_navigation");
                 wrap_history(data);
+                
+                if (data.direction == 'open'){
+                    messageList.scrollTop = 0;
+                }
+
                 break;
 
             default:
@@ -296,14 +303,8 @@ function clear_onlineUsersSelectorAdd() {
 
 
 function wrap_history(data){
-
-    // console.log('wrap_history');
-
     for (const key of data.update_navigation) {
-        
-        history_data = key
-        // console.log('Key: ' + key);
-        
+        history_data = key        
         // Add message to chat
         let position = 'left'; 
         if (history_data.user == echoUser) {position = 'right';}
@@ -361,14 +362,13 @@ function wrap_history(data){
                     ulbox.innerHTML += messageItem;
                 }
             }
-            if (data.direction == 'forward'){
+            if (data.direction == 'forward' | data.direction == 'open'){
                     ulbox.innerHTML += messageItem;
             }           
             // // Callback Observer API Intersection
             const boxes = document.querySelectorAll('.box');
             boxes.forEach(element => observer.observe(element));
         }
-
     };
 }
 
@@ -404,7 +404,7 @@ function drawMessage(data, user_view='', chatlog_value='') {
                 <div class="avatar">${user_view}</div>
                     <div class="text_wrapper">
                         <div class="text">${sms}<br>
-                        <div id="is_read" class="${up_status}></div>
+                        <div id="is_read" class="${up_status}"></div>
                         <div id="is_created"><p>${created}</p></div>
                     </div>
                 </div>
