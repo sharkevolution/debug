@@ -257,8 +257,8 @@ function connect() {
                         child_is_read.setAttribute("class", up_status);
                         child_datetime.innerHTML = `<p>${ms[1]}</p>`;
                     }
-                    if (ms[0] == true){child_new_text.innerHTML = `<p></p>`;}
-
+                    // if (ms[0] == true){child_new_text.innerHTML = `<p></p>`;}
+                    child_new_text.innerHTML = `<p>New</p>`
                     // Update unread messages
                     chatScroll.textContent = data.messages_unread.length;
 
@@ -347,7 +347,6 @@ function wrap_history(data){
 
         box_exists = document.getElementById(`box-${history_data.id}`);
         if (!box_exists) {
-
             const messageItem = `
                     <li class="message ${position} box" id="box-${history_data.id}">
                         <div class="avatar">${user_view}</div>
@@ -407,7 +406,6 @@ function drawMessage(data, user_view='', chatlog_value='', new_message='') {
         created = data.message_created
     }
     console.log(data.message_id);
-
     const messageItem = `
             <li class="message ${position} box" id="${box}">
                 <div class="avatar">${user_view}</div>

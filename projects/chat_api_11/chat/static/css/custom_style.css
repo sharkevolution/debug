@@ -68,9 +68,9 @@
     background-size: 100% 18px;
     background-repeat: no-repeat;
     float: left;
-    width: 24px;
-    height: 24px;
-    margin-top: -5px;
+    width: 18px;
+    height: 18px;
+    margin-top: -2px;
     position: relative;
     --svg: url('data:image/svg+xml,\
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" \
@@ -85,7 +85,7 @@
     float: left;
     width: 18px;
     height: 18px;
-    margin-top: -5px;
+    margin-top: -2px;
     position: relative;
     --svg: url('data:image/svg+xml,\
             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="grey" \
@@ -95,17 +95,25 @@
 
 #is_created {
     font-size: small;
-    margin-top: -5px;
+    margin-top: -2px;
 }
 
-#is_new {
+.left #is_new {
     font-size: small;
     font-weight: 600;
-    margin-top: -20px;
-    position: absolute;
-    color:black;
+    color: brown;
+    display: inline-block;
+    height: 0px;
 }
 
-/* option:checked {
-    background: linear-gradient(#5A2569, #5A2569);
-  } */
+.right #is_new {
+    font-size: small;
+    font-weight: 600;
+    color: brown;
+    display: inline-block;
+    height: 0px;
+}
+
+#is_created >p{
+    margin-bottom: 0;
+}

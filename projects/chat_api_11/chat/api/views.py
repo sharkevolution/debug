@@ -48,7 +48,6 @@ def create_user(request):
     ''' 
         Create User
     '''
-
     serializer = UserSerializer(data=request.data)
     if serializer.is_valid():
         serializer.save()
