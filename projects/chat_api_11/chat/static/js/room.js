@@ -204,15 +204,10 @@ function connect() {
                 break;
             case "private_message":
                 chatLog_value = "PM from " + data.user + ": " + data.message + "\n";
-                // var user_view = data.user;
-                // var new_message = 'New!';
                 drawMessage(data, data.user, chatLog_value, 'New!');
-                // messageList.scrollTop = messageList.scrollHeight;
                 break;
             case "private_message_delivered":
                 chatLog_value = "PM to " + data.target + ": " + data.message + "\n";
-                // var user_view = echoUser;
-                // var new_message = '';
                 drawMessage(data, echoUser, chatLog_value, '');
                 messageList.scrollTop = messageList.scrollHeight;
                 break;
@@ -257,8 +252,7 @@ function connect() {
                         child_is_read.setAttribute("class", up_status);
                         child_datetime.innerHTML = `<p>${ms[1]}</p>`;
                     }
-                    // if (ms[0] == true){child_new_text.innerHTML = `<p></p>`;}
-                    child_new_text.innerHTML = `<p>New</p>`
+                    if (ms[0] == true){child_new_text.innerHTML = `<p></p>`;}
                     // Update unread messages
                     chatScroll.textContent = data.messages_unread.length;
 
@@ -330,6 +324,7 @@ function wrap_history(data){
             //private_message from
             chatLog_value = "PM from " + history_data.user + ": " + history_data.content + "\n";
             user_view = history_data.user;
+            var up_status = "bi bi-check"
             if (history_data.is_read == false){ var new_message = 'New!';}            
         } else if 
             (history_data.recipient == history_data.user && history_data.recipient == echoUser) {

@@ -303,9 +303,8 @@ class ChatConsumer(WebsocketConsumer):
                     # logging.warning(f'to_: {to_}')
 
             # Не прочитанные
-            unread = Message.objects.filter(Q(room=self.room)
-                                            & (Q(is_read=False ) & Q(status_text='private'))
-                                            & (Q(recipient=self.user.id))).order_by('created')
+            unread = Message.objects.filter(Q(room=self.room) & Q(is_read=False) & 
+                                            (Q(status_text='private') & Q(recipient=self.user.id))).order_by('created')
             unread_id = []
             for b in unread:
                 unread_id.append(b.id)
