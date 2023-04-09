@@ -265,7 +265,6 @@ function connect() {
                 if (data.direction == 'open'){
                     messageList.scrollTop = 0;
                 }
-
                 break;
 
             default:
@@ -298,7 +297,6 @@ function clear_onlineUsersSelectorAdd() {
         select.remove(length);
     }
 }
-
 
 function wrap_history(data){
     for (const key of data.update_navigation) {
@@ -335,9 +333,6 @@ function wrap_history(data){
             //public message to
             chatLog_value = history_data.content + "\n";
             user_view = history_data.user;
-            // console.log(!(history_data.user == history_data.recipient));
-            // console.log(history_data.recipient == echoUser);
-            // console.log( !(history_data.user == history_data.recipient) && history_data.recipient == echoUser);
         }
 
         box_exists = document.getElementById(`box-${history_data.id}`);
@@ -420,28 +415,14 @@ function drawMessage(data, user_view='', chatlog_value='', new_message='') {
 }
 
 // Set up the throttler 
-// Функция throttle будет принимать 2 аргумента:
-// - callee, функция, которую надо вызывать;
-// - timeout, интервал в мс, с которым следует пропускать вызовы.
 function throttle(callee, timeout) {
-    // Таймер будет определять,
-    // надо ли нам пропускать текущий вызов.
     let timer = null
-  
-    // Как результат возвращаем другую функцию.
-    // Это нужно, чтобы мы могли не менять другие части кода,
-    // чуть позже мы увидим, как это помогает.
     return function perform(...args) {
-      // Если таймер есть, то функция уже была вызвана,
-      // и значит новый вызов следует пропустить.
       if (timer) return
-  
-      // Если таймера нет, значит мы можем вызвать функцию:
+
       timer = setTimeout(() => {
-        // Аргументы передаём неизменными в функцию-аргумент:
         callee(...args)
   
-        // По окончании очищаем таймер:
         clearTimeout(timer)
         timer = null
       }, timeout)
@@ -505,4 +486,3 @@ function scrollTracking(entries) {
     }
     console.log("ScrollTracking: " + super_box_is_read);
 }
-  

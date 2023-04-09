@@ -24,8 +24,8 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         user_id = access_token_obj['user_id'] 
         cur_user = User.objects.get(id=int(user_id))
         
-        acc = TokenUser.objects.get(user=cur_user)
-        acc.token_access = str(token.access_token)
+        acc = TokenUser.objects.get(user=cur_user)   # Добавить get or create 10/04/2023 если пользователь был но не создавался token
+        acc.token_access = str(token.access_token) 
         acc.token_refresh = str(token)
         acc.save()
 
@@ -53,14 +53,14 @@ class UserSerializer(serializers.ModelSerializer):
         refresh = RefreshToken.for_user(user)
         
         # ----- Добавляем токены в связанную таблицу ----
-        # access_token_obj = refresh.access_token
-        # user_id = access_token_obj['user_id']   
+        access_token_obj = refresh.access_token
+        user_id = access_token_obj['user_id']   
         
-        # cur_user = User.objects.get(id=int(user_id))
-        # acc = CustomUser.objects.create(user=cur_user)
-        # acc.token_access = str(refresh.access_token)
-        # acc.token_refresh = str(refresh)
-        # acc.save()
+        cur_user = User.objects.get(id=int(user_id))  
+        acc = TokenUser.objects.create(user=cur_user)
+        acc.token_access = str(refresh.access_token)
+        acc.token_refresh = str(refresh)
+        acc.save()
         # ----- Добавляем токены в связанную таблицу ----
 
         return {
