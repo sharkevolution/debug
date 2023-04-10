@@ -13,7 +13,8 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
 from chat.api.serializers import (UserSerializer, 
-                                    SubjectSerializer, 
+                                    RoomSerializer,
+                                    RoomDetailSerializer,
                                     SendMessagesSerializer, 
                                     MyTokenObtainPairSerializer)
 
@@ -25,7 +26,7 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 class RoomsAPIListPagination(PageNumberPagination):
-    page_size = 3
+    page_size = 10
     page_size_query_param = 'page_size'
     max_page_size = 10000
 
@@ -33,15 +34,15 @@ class RoomsAPIListPagination(PageNumberPagination):
 class RoomsAPIListView(generics.ListAPIView):
     queryset = Room.objects.all()
     permission_classes = (IsAuthenticated, )
-    serializer_class = SubjectSerializer
+    serializer_class = RoomSerializer
     pagination_class = RoomsAPIListPagination
 
 
 class RoomsAPIDetailView(generics.RetrieveAPIView):
     queryset = Room.objects.all()
     permission_classes = (IsAuthenticated, )
-    serializer_class = SubjectSerializer
-
+    serializer_class = RoomDetailSerializer
+    
 
 @api_view(['POST'])
 def create_user(request):

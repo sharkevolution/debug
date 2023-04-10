@@ -35,16 +35,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         return token
 
 
-class SubjectSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Room
-        fields = ['name']
-
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ('username', 'password', 'token')
+        fields = ['username', 'password', 'token']
 
     token = serializers.SerializerMethodField()
     password = serializers.CharField(write_only=True)
@@ -77,10 +71,26 @@ class UserSerializer(serializers.ModelSerializer):
             return instance
 
 
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = ['id', 'name']
+
+
+class RoomDetailSerializer(serializers.ModelSerializer):
+    participante = serializers.StringRelatedField(many=True)
+    
+    class Meta:
+        model = Room
+        fields = ['id', 'name', 'participante', 'created', 'updated', 'limit_users']
+
+
+
+
 class MesageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['id', 'content', 'user', 'room_name', 'timestamp']
+        fields = ['id', 'user', 'repicient', 'status_text', 'room_name', 'content', 'created_iso']
 
 
 class SendMessagesSerializer(serializers.ModelSerializer):
