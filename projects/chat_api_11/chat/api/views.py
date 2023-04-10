@@ -1,5 +1,5 @@
 from rest_framework import generics
-from chat.models import Room, Message
+from chat.models import Room, Message, User
 from chat.api.serializers import serializers
 
 from rest_framework.permissions import IsAuthenticated
@@ -12,7 +12,8 @@ from rest_framework.decorators import api_view, renderer_classes
 from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
-from chat.api.serializers import (UserSerializer, 
+from chat.api.serializers import (UserSerializer,
+                                    UserListSerializer, 
                                     RoomSerializer,
                                     RoomDetailSerializer,
                                     SendMessagesSerializer, 
@@ -26,12 +27,14 @@ class MyTokenObtainPairView(TokenObtainPairView):
 
 
 class RoomsAPIListPagination(PageNumberPagination):
-    page_size = 10
+    page_size = 100
     page_size_query_param = 'page_size'
     max_page_size = 10000
 
 
 class RoomsAPIListView(generics.ListAPIView):
+    """Список комнат
+    """
     queryset = Room.objects.all()
     permission_classes = (IsAuthenticated, )
     serializer_class = RoomSerializer
@@ -39,10 +42,22 @@ class RoomsAPIListView(generics.ListAPIView):
 
 
 class RoomsAPIDetailView(generics.RetrieveAPIView):
+    """Детальная инфа о комнате и участниках
+    """
     queryset = Room.objects.all()
     permission_classes = (IsAuthenticated, )
     serializer_class = RoomDetailSerializer
-    
+    pagination_class = RoomsAPIListPagination
+     
+     
+class UserAPIListView(generics.ListAPIView):
+    """ Список пользователей и их id 
+    """
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated, )
+    serializer_class = UserListSerializer
+    pagination_class = RoomsAPIListPagination
+     
 
 @api_view(['POST'])
 def create_user(request):

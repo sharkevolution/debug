@@ -6,9 +6,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from chat.models import Room, Message, TokenUser
 
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
-
 
 import logging
 logger = logging.getLogger(__name__)
@@ -21,11 +18,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Save user token to base
         access_token_obj = token.access_token
-        user_id = access_token_obj['user_id'] 
+        user_id = access_token_obj['user_id']
         cur_user = User.objects.get(id=int(user_id))
-        
-        acc = TokenUser.objects.get(user=cur_user)   # Добавить get or create 10/04/2023 если пользователь был но не создавался token
-        acc.token_access = str(token.access_token) 
+
+        # Добавить get or create 10/04/2023 если пользователь был но не создавался token
+        acc = TokenUser.objects.get(user=cur_user)
+        acc.token_access = str(token.access_token)
         acc.token_refresh = str(token)
         acc.save()
 
@@ -45,12 +43,12 @@ class UserSerializer(serializers.ModelSerializer):
 
     def get_token(self, user):
         refresh = RefreshToken.for_user(user)
-        
+
         # ----- Добавляем токены в связанную таблицу ----
         access_token_obj = refresh.access_token
-        user_id = access_token_obj['user_id']   
-        
-        cur_user = User.objects.get(id=int(user_id))  
+        user_id = access_token_obj['user_id']
+
+        cur_user = User.objects.get(id=int(user_id))
         acc = TokenUser.objects.create(user=cur_user)
         acc.token_access = str(refresh.access_token)
         acc.token_refresh = str(refresh)
@@ -71,6 +69,21 @@ class UserSerializer(serializers.ModelSerializer):
             return instance
 
 
+class UserListingField(serializers.RelatedField):
+    """
+        Добавляем полей из User
+    """
+
+    def to_representation(self, value):
+        return 'id %d: username: %s is_staff: (%s)' % (value.id, value.username, value.is_staff)
+
+
+class UserListSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username']
+
+
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
@@ -78,19 +91,20 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class RoomDetailSerializer(serializers.ModelSerializer):
-    participante = serializers.StringRelatedField(many=True)
-    
+    # Добавляем помимо username, выборочно поля из User
+    participante = UserListingField(many=True, read_only=True)
+
     class Meta:
         model = Room
-        fields = ['id', 'name', 'participante', 'created', 'updated', 'limit_users']
-
-
+        fields = ['id', 'name', 'participante',
+                  'created', 'updated', 'limit_users']
 
 
 class MesageSerializer(serializers.ModelSerializer):
     class Meta:
         model = Message
-        fields = ['id', 'user', 'repicient', 'status_text', 'room_name', 'content', 'created_iso']
+        fields = ['id', 'user', 'repicient', 'status_text',
+                  'room_name', 'content', 'created_iso']
 
 
 class SendMessagesSerializer(serializers.ModelSerializer):
@@ -110,13 +124,4 @@ class SendMessagesSerializer(serializers.ModelSerializer):
         if id_room:
             # instance.(id_room)
             # instance.save()
-            return instance           
-
-
-
-    # channel_layer = get_channel_layer()
-    # print("user.id {}".format(self.user.id))
-    # print("user.id {}".format(self.recipient.id))
-
-    # async_to_sync(channel_layer.group_send)("{}".format(self.user.id), notification)
-    # async_to_sync(channel_layer.group_send)("{}".format(self.recipient.id), notification)
+            return instance
