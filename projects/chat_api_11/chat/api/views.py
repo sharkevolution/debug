@@ -13,9 +13,12 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer
 
 from chat.api.serializers import (UserSerializer,
-                                    UserListSerializer, 
+                                    UserListSerializer,
+                                    UserDetailSerializer,
+                                    UserUnreadDetailSerializer,
                                     RoomSerializer,
                                     RoomDetailSerializer,
+                                    RoomContentDetailSerializer,
                                     SendMessagesSerializer, 
                                     MyTokenObtainPairSerializer)
 
@@ -48,16 +51,44 @@ class RoomsAPIDetailView(generics.RetrieveAPIView):
     permission_classes = (IsAuthenticated, )
     serializer_class = RoomDetailSerializer
     pagination_class = RoomsAPIListPagination
-     
+
+
+class RoomsContentAPIDetailView(generics.RetrieveAPIView):
+    """ отримання списку Message для Thread'a;
+    """
+    queryset = Room.objects.all()
+    permission_classes = (IsAuthenticated, )
+    serializer_class = RoomContentDetailSerializer
+    pagination_class = RoomsAPIListPagination
+
+
+class UserUnreadAPIDetailView(generics.RetrieveAPIView):
+    """ Детально user's unread messages 
+    """
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated, )
+    serializer_class = UserUnreadDetailSerializer
+    pagination_class = RoomsAPIListPagination  
+ 
      
 class UserAPIListView(generics.ListAPIView):
-    """ Список пользователей и их id 
+    """ Список пользователей id 
     """
     queryset = User.objects.all()
     permission_classes = (IsAuthenticated, )
     serializer_class = UserListSerializer
     pagination_class = RoomsAPIListPagination
      
+     
+class UserAPIDetailView(generics.RetrieveAPIView):
+    """ Детально Thread's user 
+    """
+    queryset = User.objects.all()
+    permission_classes = (IsAuthenticated, )
+    serializer_class = UserDetailSerializer
+    pagination_class = RoomsAPIListPagination
+
+
 
 @api_view(['POST'])
 def create_user(request):
