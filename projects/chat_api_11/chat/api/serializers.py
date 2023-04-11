@@ -6,6 +6,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from chat.models import Room, Message, TokenUser
 
+from collections import OrderedDict
+
 
 import logging
 logger = logging.getLogger(__name__)
@@ -69,26 +71,38 @@ class UserSerializer(serializers.ModelSerializer):
             return instance
 
 
-class UserListingField(serializers.RelatedField):
-    """
-        Добавляем полей из User
-    """
-
-    def to_representation(self, value):
-        return 'id %d: username: %s is_staff: (%s)' % (value.id, value.username, value.is_staff)
-
-
 class UserListSerializer(serializers.ModelSerializer):
+    
+    rooms = serializers.SerializerMethodField(method_name='related_rooms')
+            
     class Meta:
         model = User
-        fields = ['id', 'username']
+        ordering = ['id', 'rooms']
+        fields = ['id', 'username', 'rooms']
 
+    def related_rooms(self, obj):
+        related_rooms = obj.participante_in_room.filter()
+        user_rooms = {}
+        for b in related_rooms:
+            user_rooms[b.id] = b.name
+
+        # Добавить сообщение последнее datetime и статус is_read
+        return OrderedDict(sorted(user_rooms.items(), key=lambda item: item[0]))
+    
 
 class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['id', 'name']
 
+
+class UserListingField(serializers.RelatedField):
+    """
+        Добавляем полей из User
+    """
+    def to_representation(self, value):
+        return {'id': value.id, 'name': value.username, 'is_staff': value.is_staff}
+    
 
 class RoomDetailSerializer(serializers.ModelSerializer):
     # Добавляем помимо username, выборочно поля из User

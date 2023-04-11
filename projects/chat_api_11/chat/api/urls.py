@@ -10,8 +10,7 @@ app_name = 'chat'
 urlpatterns = [
     path('rooms/', views.RoomsAPIListView.as_view(), name='rooms_api_list'),
     path('rooms/<pk>/', views.RoomsAPIDetailView.as_view(), name='rooms_api_detail'),
- 
-    re_path(r'^users/', views.UserAPIListView.as_view(), name='users_api'),  # Список пользователей и ИД 
+    path('users/', views.UserAPIListView.as_view(), name='users_api'),  # Список пользователей и ИД 
 ]
 
 urlpatterns += [
