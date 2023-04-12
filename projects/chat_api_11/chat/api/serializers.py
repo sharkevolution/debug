@@ -109,39 +109,37 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def related_rooms(self, obj):
         # filter related filed m2m
-        related_rooms = obj.participante_in_room.filter()
+        
         user_rooms = {}
-        logging.warning(related_rooms)
+        related_rooms = obj.participante_in_room.filter()
+                
         for b in related_rooms:
+                last_text_content = ''
+                last_text_is_read = ''
+                last_text_created = ''
+                last_text_pecipient = ''
+                last_text_status = ''
+                
+                user_content = Message.objects.filter(Q(room=b.id)
+                                                    & (Q(user=obj.id) | Q(recipient=obj.id) | Q(status_text='public'))).order_by('-created')
 
-            related_messages = obj.from_user.filter()
-            user_content = related_messages.filter(Q(room=b.id)
-                                                   & (Q(user=obj.id) | Q(recipient=obj.id))).order_by('created')
-
-            last_text_content = None
-            last_text_is_read = None
-            last_text_created = None
-            last_text_pecipient = None
-            last_text_status = None
-
-            # Исправить так как тянет по obj.from_user не все данные захватывает!! 12.04.2023
-
-            if user_content:
-                usm = user_content[0]
-                last_text_content = usm.content
-                last_text_is_read = usm.is_read
-                last_text_created = usm.created.strftime('%Y-%m-%d %H:%M:%S')
-                last_text_pecipient = usm.recipient.username
-                last_text_status = usm.status_text
+                if user_content:
+                    usm = user_content[0]
+                    last_text_content = usm.content
+                    last_text_is_read = usm.is_read
+                    last_text_created = usm.created.strftime('%Y-%m-%d %H:%M:%S')
+                    last_text_pecipient = usm.recipient.username
+                    last_text_status = usm.status_text
 
                 user_rooms[b.id] = {'name': b.name,
                                     'last_message_content': last_text_content,
                                     'last_message_is_read': last_text_is_read,
                                     'last_message_created': last_text_created,
                                     'last_message_recipient': last_text_pecipient,
-                                    'last_message_status': last_text_status, }
+                                    'last_message_status': last_text_status, 
+                                    }
 
-        return OrderedDict(sorted(user_rooms.items(), key=lambda item: item[0]))
+        return OrderedDict(sorted(user_rooms.items(), key=lambda item: item[0], reverse=True))
 
 
 class UserUnreadDetailSerializer(serializers.ModelSerializer):
@@ -157,17 +155,17 @@ class UserUnreadDetailSerializer(serializers.ModelSerializer):
     def related_rooms_unread(self, obj):
         # filter related filed m2m
         
-        related_rooms = obj.participante_in_room.filter()
         user_rooms = {}
-        
+        related_rooms = obj.participante_in_room.filter()
         for b in related_rooms:
-            
-            related_messages = obj.from_user.filter()
-            user_content = related_messages.filter(Q(room=b.id)
-                                                   & (Q(user=obj.id) | Q(recipient=obj.id))).order_by('-created')
+            user_content = Message.objects.filter(Q(room=b.id)
+                                                & (Q(user=obj.id) | Q(recipient=obj.id)) 
+                                                & (Q(status_text='private') & Q(is_read=False))).order_by('-created')
 
             if user_content:
                 user_rooms[b.id] = {'name': b.name, 'unread': len(user_content)}
+            else:
+                user_rooms[b.id] = {'name': b.name, 'unread': 0}
 
         return user_rooms
 
