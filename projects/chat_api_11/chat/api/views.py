@@ -1,16 +1,17 @@
 from rest_framework import generics
 from chat.models import Room, Message, User
-from chat.api.serializers import serializers
+
+from django.http.request import QueryDict
 
 from rest_framework.permissions import IsAuthenticated
-
 from rest_framework.decorators import api_view, permission_classes
+
+from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 
 from rest_framework import status
-from rest_framework.decorators import api_view, renderer_classes
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.renderers import JSONRenderer
 
 from chat.api.serializers import (UserSerializer,
                                     UserListSerializer,
@@ -23,6 +24,9 @@ from chat.api.serializers import (UserSerializer,
                                     MyTokenObtainPairSerializer)
 
 from rest_framework_simplejwt.views import TokenObtainPairView
+
+import logging
+logger = logging.getLogger(__name__)
 
 
 class MyTokenObtainPairView(TokenObtainPairView):
@@ -91,12 +95,13 @@ class UserAPIDetailView(generics.RetrieveAPIView):
 
 
 @api_view(['POST'])
+# @permission_classes([IsAuthenticated])
 def create_user(request):
     ''' 
-        Create User
+        Create User and token refresh and access simple JWT
     '''
     serializer = UserSerializer(data=request.data)
-    if serializer.is_valid():
+    if serializer.is_valid(raise_exception=True):
         serializer.save()
         return Response(
             {'data': serializer.data},
@@ -110,12 +115,19 @@ def create_user(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def send_message_user(request):
+    """ Отправка сообщения пользователю в комнату Thread
+    """
+    if isinstance(request.data, QueryDict):
+        request.data._mutable = True
+        request.data['user'] = request.user.id
 
+    # serializer = SendMessagesSerializer(data=request.data, context={'user_from': request.user})    
     serializer = SendMessagesSerializer(data=request.data)
 
-    if serializer.is_valid():
-        # serializer.save()
+    if serializer.is_valid(raise_exception=True):
+        serializer.save()
         return Response(
             {'data': serializer.data},
             status=status.HTTP_201_CREATED

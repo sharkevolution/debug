@@ -15,6 +15,9 @@ logger = logging.getLogger(__name__)
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    """ 
+        POST: http://localhost:8000/api/token/
+    """
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
@@ -30,14 +33,12 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         acc.token_refresh = str(token)
         acc.save()
 
-        # logging.warning('refresh: ' + str(token))
-        # logging.warning('access: ' + str(str(token.access_token)))
-
         return token
 
 
 class UserSerializer(serializers.ModelSerializer):
     """ Создание пользователя и токена
+        POST: http://127.0.0.1:8000/api/user/create/
     """
     class Meta:
         model = User
@@ -75,7 +76,8 @@ class UserSerializer(serializers.ModelSerializer):
 
 
 class UserListSerializer(serializers.ModelSerializer):
-    """ Полечение списка id users
+    """ Получение списка id users
+        GET: http://127.0.0.1:8000/api/users/ 
     """
 
     rooms = serializers.SerializerMethodField(method_name='related_rooms')
@@ -98,6 +100,8 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     """ одержання списку Thread'ів для будь-якого user'a (у кожному Thread'e має лежати
         останнє повідомлення, якщо таке є);
+        
+        GET: http://127.0.0.1:8000/api/users/3/
     """
 
     rooms = serializers.SerializerMethodField(method_name='related_rooms')
@@ -144,6 +148,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 class UserUnreadDetailSerializer(serializers.ModelSerializer):
     """ непрочитанные сообщения пользователем
+        GET: http://127.0.0.1:8000/api/usersunread/3/
 
     """
     unread = serializers.SerializerMethodField(method_name='related_rooms_unread')
@@ -162,15 +167,17 @@ class UserUnreadDetailSerializer(serializers.ModelSerializer):
                                                 & (Q(user=obj.id) | Q(recipient=obj.id)) 
                                                 & (Q(status_text='private') & Q(is_read=False))).order_by('-created')
 
+            user_rooms[b.id] = {'name': b.name, 'unread': 0}
             if user_content:
                 user_rooms[b.id] = {'name': b.name, 'unread': len(user_content)}
-            else:
-                user_rooms[b.id] = {'name': b.name, 'unread': 0}
 
         return user_rooms
 
 
 class RoomSerializer(serializers.ModelSerializer):
+    """ List of rooms
+        GET: http://127.0.0.1:8000/api/rooms/
+    """
     class Meta:
         model = Room
         fields = ['id', 'name']
@@ -187,6 +194,7 @@ class UserListingField(serializers.RelatedField):
 
 class RoomDetailSerializer(serializers.ModelSerializer):
     """ Детальная информация о Thread
+        GET: http://127.0.0.1:8000/api/rooms/4/
     """
     participante = UserListingField(many=True, read_only=True)
 
@@ -198,6 +206,7 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 class RoomContentDetailSerializer(serializers.ModelSerializer):
     """ Список сообщений Thread
+        GET: http://127.0.0.1:8000/api/roomcontent/1/
     """
     messages = serializers.SerializerMethodField(method_name='get_messages')
 
@@ -208,8 +217,7 @@ class RoomContentDetailSerializer(serializers.ModelSerializer):
     def get_messages(self, obj):
         # filter related filed m2m
         room_messages = {}
-        mes = Message.objects.filter(room=obj.id).order_by("room")
-        if mes:
+        if mes:= Message.objects.filter(room=obj.id).order_by("room"):
             for b in mes:
                 room_messages[b.id] = {'id': b.id, 'user': b.user.username,
                                        'repicient': b.recipient.username,
@@ -222,18 +230,16 @@ class RoomContentDetailSerializer(serializers.ModelSerializer):
 
 class SendMessagesSerializer(serializers.ModelSerializer):
     '''
-        Реализовать сохранение в базу и отправку уведомления о новом сообщении
-        Проверить и сделать валидацию 26.03.2023
-    '''
+        Реализовать уведомления о новом сообщении 13.04.2023
+        https://stackoverflow.com/questions/47030576/drf-set-max-and-min-value-of-a-serializer-field
+    '''    
     class Meta:
-        model = Room
-        fields = ['name']
+        model = Message
+        fields = ['user', 'recipient', 'room', 'content', 'status_text'] 
+        # raise serializers.ValidationError("End date must be after start date.")
 
-    def sendmessage(self, validated_data):
-        id_room = validated_data.pop('name', None)
+    def create(self, validated_data):    
         instance = self.Meta.model(**validated_data)
-        logging.warning('ok api')
-        if id_room:
-            # instance.(id_room)
-            # instance.save()
-            return instance
+        instance.save()
+
+        return instance

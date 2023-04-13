@@ -13,6 +13,7 @@ urlpatterns = [
     re_path(r'^roomcontent/(?P<pk>[\w-]+)/$', views.RoomsContentAPIDetailView.as_view(), name='rooms_api_content'),
     
     path('user/create/', views.create_user, name='create_user'),  # Create user and create token
+    path('sendmessage/', views.send_message_user, name='send_api_message'),
     path('users/', views.UserAPIListView.as_view(), name='users_api'),  # Список пользователей и ИД 
     path('users/<pk>/', views.UserAPIDetailView.as_view(), name='users_api_detail'),  # Детально
     re_path(r'^usersunread/(?P<pk>[\w-]+)/$', views.UserUnreadAPIDetailView.as_view(), name='users_api_unread_text'),
