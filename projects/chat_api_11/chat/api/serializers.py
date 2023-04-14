@@ -229,17 +229,17 @@ class RoomContentDetailSerializer(serializers.ModelSerializer):
 
 
 class SendMessagesSerializer(serializers.ModelSerializer):
-    '''
-        Реализовать уведомления о новом сообщении 13.04.2023
-        https://stackoverflow.com/questions/47030576/drf-set-max-and-min-value-of-a-serializer-field
+    ''' Send messages to user
     '''    
     class Meta:
         model = Message
-        fields = ['user', 'recipient', 'room', 'content', 'status_text'] 
-        # raise serializers.ValidationError("End date must be after start date.")
+        fields = ['user', 'recipient', 'room', 'content', 'status_text', 'is_read'] 
+        # raise serializers.ValidationError("")
 
-    def create(self, validated_data):    
+    def create(self, validated_data):        
         instance = self.Meta.model(**validated_data)
         instance.save()
 
         return instance
+    
+#### Создать комнату и пользователей и ограничить 2 пользователями по ТЗ

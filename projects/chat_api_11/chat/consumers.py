@@ -3,6 +3,7 @@
 import json
 
 from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from channels.generic.websocket import WebsocketConsumer
 
 from .models import Room, Message, User, OnlineParticipanteRoom, CursorParticipanteRoom
@@ -32,8 +33,7 @@ class ChatConsumer(WebsocketConsumer):
         self.room = Room.objects.get(name=self.room_name)
         self.user = self.scope['user']  # new
         self.user_id = self.scope["session"]["_auth_user_id"] 
-        self.user_inbox = f'inbox_{self.user.username}'  # new
-        # new
+        self.user_inbox = f'inbox_{self.user.username}'
         self.room_user_inbox = f'inbox_{self.room.name}_{self.user.username}'
 
         ChatConsumer.starting_server += 1
@@ -514,9 +514,6 @@ class ChatConsumer(WebsocketConsumer):
                 super_part = OnlineParticipanteRoom.objects.create(
                     user=u1, room=r1, user_status='offline')
                 super_part.save()
-
-    # def get_messages_open_page(self):
-    #     pass
 
     def history_navigation(self, event):
         self.send(text_data=json.dumps(event))

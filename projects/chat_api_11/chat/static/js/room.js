@@ -436,7 +436,6 @@ function wheel_up (event) {
     boxes.forEach(element => observer.observe(element));
 
     if (event.deltaY < 0) {
-        // console.log(super_box_is_read);
         // Отправка запроса на обновление
         chatSocket.send(JSON.stringify({
             "messages_history": {'navigation_back': super_box_is_read},
