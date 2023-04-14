@@ -1,3 +1,4 @@
+from rest_framework.generics import get_object_or_404
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
@@ -15,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
-    """ 
+    """
         POST: http://localhost:8000/api/token/
     """
     @classmethod
@@ -77,7 +78,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     """ Получение списка id users
-        GET: http://127.0.0.1:8000/api/users/ 
+        GET: http://127.0.0.1:8000/api/users/
     """
 
     rooms = serializers.SerializerMethodField(method_name='related_rooms')
@@ -100,7 +101,7 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     """ одержання списку Thread'ів для будь-якого user'a (у кожному Thread'e має лежати
         останнє повідомлення, якщо таке є);
-        
+
         GET: http://127.0.0.1:8000/api/users/3/
     """
 
@@ -113,17 +114,17 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
     def related_rooms(self, obj):
         # filter related filed m2m
-        
+
         user_rooms = {}
         related_rooms = obj.participante_in_room.filter()
-                
+
         for b in related_rooms:
                 last_text_content = ''
                 last_text_is_read = ''
                 last_text_created = ''
                 last_text_pecipient = ''
                 last_text_status = ''
-                
+
                 user_content = Message.objects.filter(Q(room=b.id)
                                                     & (Q(user=obj.id) | Q(recipient=obj.id) | Q(status_text='public'))).order_by('-created')
 
@@ -131,7 +132,8 @@ class UserDetailSerializer(serializers.ModelSerializer):
                     usm = user_content[0]
                     last_text_content = usm.content
                     last_text_is_read = usm.is_read
-                    last_text_created = usm.created.strftime('%Y-%m-%d %H:%M:%S')
+                    last_text_created = usm.created.strftime(
+                        '%Y-%m-%d %H:%M:%S')
                     last_text_pecipient = usm.recipient.username
                     last_text_status = usm.status_text
 
@@ -140,7 +142,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
                                     'last_message_is_read': last_text_is_read,
                                     'last_message_created': last_text_created,
                                     'last_message_recipient': last_text_pecipient,
-                                    'last_message_status': last_text_status, 
+                                    'last_message_status': last_text_status,
                                     }
 
         return OrderedDict(sorted(user_rooms.items(), key=lambda item: item[0], reverse=True))
@@ -151,7 +153,8 @@ class UserUnreadDetailSerializer(serializers.ModelSerializer):
         GET: http://127.0.0.1:8000/api/usersunread/3/
 
     """
-    unread = serializers.SerializerMethodField(method_name='related_rooms_unread')
+    unread = serializers.SerializerMethodField(
+        method_name='related_rooms_unread')
 
     class Meta:
         model = User
@@ -159,17 +162,18 @@ class UserUnreadDetailSerializer(serializers.ModelSerializer):
 
     def related_rooms_unread(self, obj):
         # filter related filed m2m
-        
+
         user_rooms = {}
         related_rooms = obj.participante_in_room.filter()
         for b in related_rooms:
             user_content = Message.objects.filter(Q(room=b.id)
-                                                & (Q(user=obj.id) | Q(recipient=obj.id)) 
+                                                & (Q(user=obj.id) | Q(recipient=obj.id))
                                                 & (Q(status_text='private') & Q(is_read=False))).order_by('-created')
 
             user_rooms[b.id] = {'name': b.name, 'unread': 0}
             if user_content:
-                user_rooms[b.id] = {'name': b.name, 'unread': len(user_content)}
+                user_rooms[b.id] = {'name': b.name,
+                    'unread': len(user_content)}
 
         return user_rooms
 
@@ -217,7 +221,7 @@ class RoomContentDetailSerializer(serializers.ModelSerializer):
     def get_messages(self, obj):
         # filter related filed m2m
         room_messages = {}
-        if mes:= Message.objects.filter(room=obj.id).order_by("room"):
+        if mes := Message.objects.filter(room=obj.id).order_by("room"):
             for b in mes:
                 room_messages[b.id] = {'id': b.id, 'user': b.user.username,
                                        'repicient': b.recipient.username,
@@ -230,16 +234,47 @@ class RoomContentDetailSerializer(serializers.ModelSerializer):
 
 class SendMessagesSerializer(serializers.ModelSerializer):
     ''' Send messages to user
-    '''    
+    '''
     class Meta:
         model = Message
-        fields = ['user', 'recipient', 'room', 'content', 'status_text', 'is_read'] 
+        fields = ['user', 'recipient', 'room',
+            'content', 'status_text', 'is_read']
         # raise serializers.ValidationError("")
 
-    def create(self, validated_data):        
+    def create(self, validated_data):
+        logging.warning(validated_data)
         instance = self.Meta.model(**validated_data)
         instance.save()
 
         return instance
+
+
+import json
+
+def attempt_json_deserialize(data, expect_type=None):
+    try:
+        data = json.loads(data)
+    except (TypeError, json.decoder.JSONDecodeError): pass
+
+    if expect_type is not None and not isinstance(data, expect_type):
+        raise ValueError(f"Got {type(data)} but expected {expect_type}.")
+
+    return data
+
+
+
+class CreateRoomSerializer(serializers.ModelSerializer):
+    ''' Create Room and add user
+    '''
+    participante = serializers.PrimaryKeyRelatedField(many=True, read_only=False, queryset=User.objects.all())
     
-#### Создать комнату и пользователей и ограничить 2 пользователями по ТЗ
+    class Meta:
+        model = Room
+        fields = ['name', 'participante']
+    
+    def create(self, validated_data):
+
+        part = validated_data.pop("participante")
+        instance = self.Meta.model(**validated_data)
+    
+        return instance

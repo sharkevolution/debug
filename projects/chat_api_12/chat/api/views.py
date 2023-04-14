@@ -16,6 +16,7 @@ from chat.api.serializers import (UserSerializer,
                                   UserListSerializer,
                                   UserDetailSerializer,
                                   UserUnreadDetailSerializer,
+                                  CreateRoomSerializer,
                                   RoomSerializer,
                                   RoomDetailSerializer,
                                   RoomContentDetailSerializer,
@@ -116,13 +117,12 @@ def create_user(request):
 
 class SendMessageUser(viewsets.ReadOnlyModelViewSet):
 
-    permission_classes = (IsAuthenticated, )
     queryset = Message.objects.all()
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def post(self, request, *args, **kwargs):
         """ Отправка сообщения пользователю в комнату Thread
-        """
+        """        
         if isinstance(request.data, QueryDict):
             request.data._mutable = True
             request.data['user'] = request.user.id
@@ -181,3 +181,27 @@ class SendMessageUser(viewsets.ReadOnlyModelViewSet):
                     'message_status': last_text.is_read,  # Добавляем статус, прочитано или нет
                 }
             )
+
+
+class CreateRoomUser(viewsets.ReadOnlyModelViewSet):
+
+    queryset = Room.objects.all()
+
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def post(self, request, *args, **kwargs):
+        """ Создание Thread and add users
+        """
+        logging.warning(request.data)        
+        serializer = CreateRoomSerializer(data=request.data)
+
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+
+            return Response({'data': serializer.data},
+                            status=status.HTTP_201_CREATED
+                            )
+
+        return Response(
+            {'data': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )

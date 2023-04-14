@@ -22,7 +22,7 @@ class TokenUser(models.Model):
 
 
 class Room(models.Model):  # Thread
-    name = models.CharField(max_length=128)     
+    name = models.CharField(max_length=128, unique=True)     
     participante = models.ManyToManyField(to=User, blank=True, related_name='participante_in_room')
     online = models.ManyToManyField(to=User, blank=True, through='OnlineParticipanteRoom')
     created = models.DateTimeField(auto_now_add=True)
@@ -37,19 +37,6 @@ class Room(models.Model):  # Thread
 
     def get_participante_count(self):
         return self.participante.count()
-
-    # def join(self, user):
-    #     self.online.add(user)
-    #     self.save()
-        # r1 = Room.objects.get(name=self.room_name)
-        # u1 = User.objects.get(username=self.user)
-        # super_part = OnlineParticipanteRoom.objects.create(user=u1, room=r1, user_status='off')
-        # super_part.save()
-
-    # def leave(self, user):
-    #     pass
-        # self.online.remove(user)
-        # self.save()
     
     def display_users(self):
         """
