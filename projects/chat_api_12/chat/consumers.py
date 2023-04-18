@@ -3,7 +3,6 @@
 import json
 
 from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 from channels.generic.websocket import WebsocketConsumer
 
 from .models import Room, Message, User, OnlineParticipanteRoom, CursorParticipanteRoom

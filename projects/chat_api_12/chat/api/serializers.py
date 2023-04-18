@@ -4,6 +4,7 @@ from django.contrib.auth.models import User
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework.validators import UniqueValidator
 
 from chat.models import Room, Message, TokenUser
 
@@ -249,20 +250,6 @@ class SendMessagesSerializer(serializers.ModelSerializer):
         return instance
 
 
-import json
-
-def attempt_json_deserialize(data, expect_type=None):
-    try:
-        data = json.loads(data)
-    except (TypeError, json.decoder.JSONDecodeError): pass
-
-    if expect_type is not None and not isinstance(data, expect_type):
-        raise ValueError(f"Got {type(data)} but expected {expect_type}.")
-
-    return data
-
-
-
 class CreateRoomSerializer(serializers.ModelSerializer):
     ''' Create Room and add user
     '''
@@ -271,10 +258,28 @@ class CreateRoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = ['name', 'participante']
+        depth = 1
     
     def create(self, validated_data):
 
         part = validated_data.pop("participante")
-        instance = self.Meta.model(**validated_data)
+        
+        instance = self.Meta.model(**validated_data)        
     
+        rooms_exists = self.Meta.model.objects.filter(name=validated_data['name'])
+        if rooms_exists:
+            rooms_ = self.Meta.model.objects.get(name=validated_data['name'])
+            lim = rooms_.get_participante_count() + len(part)
+        else:
+            lim = len(part)
+            
+        if lim <= 2:
+            instance.save()                            
+            
+            for p in part:
+                instance.participante.add(p)
+        else:
+            raise serializers.ValidationError({'limit': 'limited nimbers of users, limit = 2'})
+        
         return instance
+
