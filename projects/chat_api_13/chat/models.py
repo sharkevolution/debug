@@ -22,7 +22,7 @@ class TokenUser(models.Model):
 
 
 class Room(models.Model):  # Thread
-    name = models.CharField(max_length=128, unique=True)     
+    name = models.CharField(max_length=128)     
     participante = models.ManyToManyField(to=User, blank=True, related_name='participante_in_room')
     online = models.ManyToManyField(to=User, blank=True, through='OnlineParticipanteRoom')
     created = models.DateTimeField(auto_now_add=True)

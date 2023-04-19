@@ -266,20 +266,32 @@ class CreateRoomSerializer(serializers.ModelSerializer):
         
         instance = self.Meta.model(**validated_data)        
     
+        user_exists = 0
+        users_lim = 0
         rooms_exists = self.Meta.model.objects.filter(name=validated_data['name'])
         if rooms_exists:
             rooms_ = self.Meta.model.objects.get(name=validated_data['name'])
-            lim = rooms_.get_participante_count() + len(part)
+            users_lim = rooms_.get_participante_count() + len(part)
+            
+            for b in part:
+                match = rooms_.participante.all().filter(id=b.id).exists()
+                if match:
+                    user_exists += 1
+            
         else:
             lim = len(part)
-            
-        if lim <= 2:
-            instance.save()                            
-            
-            for p in part:
-                instance.participante.add(p)
+        
+        if rooms_exists and user_exists == 2:
+            room_del = self.Meta.model.objects.get(name=validated_data['name'])
+            room_del.delete()
+            raise serializers.ValidationError({'Delete': f"Room [{validated_data['name']}] with participantes was delete!"})
         else:
-            raise serializers.ValidationError({'limit': 'limited nimbers of users, limit = 2'})
+            if users_lim <= 2 and user_exists < 2:
+                instance.save()    
+                for p in part:
+                    instance.participante.add(p)
+            else:
+                raise serializers.ValidationError({'limit': 'limited nimbers of users, limit = 2'})
         
         return instance
 
