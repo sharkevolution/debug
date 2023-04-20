@@ -6,7 +6,7 @@ db.sqlite3
 /venv/*
 /books/*
 
-*.vscode
+/.vscode/*
 *.py[cod]
 
 # C extensions
