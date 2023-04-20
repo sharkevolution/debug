@@ -24,15 +24,15 @@
 
 #### Клонируйте через HTTPS
 
-    $ git clone https://github.com/sharkevolution/debug.git
+    git clone https://github.com/sharkevolution/debug.git
 
 #### Перейдите в каталог `debug`, обновите `pip` менеджер пакетов
 
-    $ python -m pip install --upgrade pip
+    python -m pip install --upgrade pip
 
 #### Cоздайте виртуальное окружение
 
-    $ %LocalAppData%\Programs\Python\Python310\python.exe -m venv %cd%\venv
+    %LocalAppData%\Programs\Python\Python310\python.exe -m venv %cd%\venv
   
 #### Структура после создания
 
@@ -45,24 +45,24 @@
 	
 #### Установите пакеты и зависимости
 
-    $ pip install -r requirements.txt
+    pip install -r requirements.txt
 
 #### Выполните следующие команды, чтобы создать нужные таблицы в базе данных `sqlite3`
 
-    $ python manage.py makemigrations
-    $ python manage.py migrate
+    python manage.py makemigrations
+    python manage.py migrate
 
 #### Создание суперпользователя
 
 Для создания суперпользователя вызовите следующую команду из той же папки, где расположен `manage.py`. Вас попросят ввести имя пользователя, адрес электронной почты и надёжный пароль.
 
-    $ python3 manage.py createsuperuser
+    python3 manage.py createsuperuser
     
 После выполнения этой команды новый суперпользователь будет добавлен в базу данных. Теперь перезапустите сервер, чтобы можно было протестировать вход на сайт:
 
 #### Запуск отладочного сервера
 
-     $ python manage.py runserver
+    python manage.py runserver
      
 Команда запустит приложение будет доступно на вашем локальном хосте http://127.0.0.1:8000/
 
