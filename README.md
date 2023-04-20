@@ -33,7 +33,16 @@
 #### Cоздайте виртуальное окружение
 
     $ %LocalAppData%\Programs\Python\Python310\python.exe -m venv %cd%\venv
+  
+#### Структура после создания
 
+    debug
+    	projects
+	venv
+	.gitignore
+	README.md
+	requirements.txt
+	
 #### Установите пакеты и зависимости
 
     $ pip install -r requirements.txt
@@ -83,5 +92,20 @@
 6. Добавление и исключение пользователей из комнаты
 
 #### Реализованный API:
+
+|Метод	|URL-адрес                                    |
+|-------|---------------------------------------------|
+|POST	|http://127.0.0.1:8000/api/v1/token/          |
+|POST	|http://127.0.0.1:8000/api/v1/users/create/   |
+|GET	|http://127.0.0.1:8000/api/v1/rooms/          |
+|GET	|http://127.0.0.1:8000/api/v1/rooms/2/        |
+|GET	|http://127.0.0.1:8000/api/v1/roomcontent/2/  |
+|GET	|http://127.0.0.1:8000/api/v1/users/          |
+|GET	|http://127.0.0.1:8000/api/v1/users/1         |
+|GET	|http://127.0.0.1:8000/api/v1/users/unread/3/ |
+|POST	|http://localhost:8000/api/v1/usersend/       |
+|POST	|http://127.0.0.1:8000/api/v1/roomcreate/     |
+
+
 
 
