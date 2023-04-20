@@ -36,12 +36,12 @@
   
 #### Структура после создания
 
-debug
-  projects
-  venv
-  .gitignore
-  README.md
-  requirements.txt
+	debug
+	  projects
+	  venv
+	  .gitignore
+	  README.md
+	  requirements.txt
 	
 #### Установите пакеты и зависимости
 
