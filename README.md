@@ -108,7 +108,7 @@ Authorization: Bearer <token> simple JWT в заголовке
 |POST  |http://127.0.0.1:8000/api/v1/roomcreate/        |Создание комнаты с двумя участниками, key = [name, participante, participante] имя и id участников |
 
 
-##### Postman клиент для тестирования API
+#### Postman клиент для тестирования API
 
 В проекте для возможности тестирования добавлен файл импорта Postman, Collection v2.1 'Simple_Chat_Django.postman_collection.json'
 	
