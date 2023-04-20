@@ -95,24 +95,27 @@ class UserAPIDetailView(generics.RetrieveAPIView):
     pagination_class = RoomsAPIListPagination
 
 
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def create_user(request):
+class Create_user(viewsets.ReadOnlyModelViewSet):
     ''' 
         Create User and token refresh and access simple JWT
     '''
-    serializer = UserSerializer(data=request.data)
-    if serializer.is_valid(raise_exception=True):
-        serializer.save()
-        return Response(
-            {'data': serializer.data},
-            status=status.HTTP_201_CREATED
-        )
+    queryset = User.objects.all()
+    
+    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
+    def post(self, request, *args, **kwargs):
+    
+        serializer = UserSerializer(data=request.data)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save()
+            return Response(
+                {'data': serializer.data},
+                status=status.HTTP_201_CREATED
+            )
 
-    return Response(
-        {'data': serializer.errors},
-        status=status.HTTP_400_BAD_REQUEST
-    )
+        return Response(
+            {'data': serializer.errors},
+            status=status.HTTP_400_BAD_REQUEST
+        )
 
 
 class SendMessageUser(viewsets.ReadOnlyModelViewSet):

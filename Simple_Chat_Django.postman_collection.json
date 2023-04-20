@@ -1,0 +1,460 @@
+{
+	"info": {
+		"_postman_id": "407072c4-0884-426c-a775-72909a4c0258",
+		"name": "Simple_Chat_Django",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "26500045"
+	},
+	"item": [
+		{
+			"name": "Token refresh and access",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "admin",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "fortuna-1#",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/token/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "refresh only access token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "refresh",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY4MjA5MTY4MSwiaWF0IjoxNjgyMDA1MjgxLCJqdGkiOiI4YjM5MzYxZGIxOWM0ZTAyOTI0NTA5YjlhYTIzNzcwOCIsInVzZXJfaWQiOjF9.gybZYdxYfXXLbJXVX1dBgiMQ-DyhORFkC8GlSU40Ir0",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/token/refresh/?username=admin&password=fortuna-1%23",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"token",
+						"refresh",
+						""
+					],
+					"query": [
+						{
+							"key": "username",
+							"value": "admin"
+						},
+						{
+							"key": "password",
+							"value": "fortuna-1%23"
+						},
+						{
+							"key": "refresh",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTY4MTE2Mjk0OSwiaWF0IjoxNjgxMDc2NTQ5LCJqdGkiOiI3OGVmYTFlZTI0YTY0ODUxOTc1ODg3MTI1NzhjNjhkNyIsInVzZXJfaWQiOjF9.VkiC0ZEh1NTGy2_hqfrRWIG19vp6nvfUs8N9-sKLzKc",
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create USER",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDA4ODgxLCJpYXQiOjE2ODIwMDUyODEsImp0aSI6IjUxY2IzZjExNmY5YTQ4YWU5ZTE1NzkwYjE3NGM4MDI3IiwidXNlcl9pZCI6MX0.alO9AVTBz-gBABg4DrDoycHHEO-gUoc5Kj_gGVNTsm4",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "username",
+							"value": "zoo9",
+							"type": "text"
+						},
+						{
+							"key": "password",
+							"value": "fortuna-1#",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/users/create/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"create",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rooms",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDA4ODgxLCJpYXQiOjE2ODIwMDUyODEsImp0aSI6IjUxY2IzZjExNmY5YTQ4YWU5ZTE1NzkwYjE3NGM4MDI3IiwidXNlcl9pZCI6MX0.alO9AVTBz-gBABg4DrDoycHHEO-gUoc5Kj_gGVNTsm4",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/rooms/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"rooms",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Rooms detail",
+			"request": {
+				"auth": {
+					"type": "bearer"
+				},
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/rooms/2/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"rooms",
+						"2",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Room content",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/roomcontent/2/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"roomcontent",
+						"2",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Users",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/users/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Users detail",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/users/3/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"3",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Unread messages User",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/users/unread/3/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"users",
+						"unread",
+						"3",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Send text to recipient in room",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "formdata",
+					"formdata": [
+						{
+							"key": "recipient",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "room",
+							"value": "2",
+							"type": "text"
+						},
+						{
+							"key": "content",
+							"value": "Send message from API with DRF x6",
+							"type": "text"
+						}
+					]
+				},
+				"url": {
+					"raw": "http://localhost:8000/api/v1/usersend/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"usersend",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Rooms",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNjgyMDEwOTM5LCJpYXQiOjE2ODIwMDczMzksImp0aSI6ImM3ZGVjOTllNTU5NTRmMGViNTczM2NjMmU1OGY1ODU1IiwidXNlcl9pZCI6MX0.HwW2LqIW0vxJTDctLf2fKyrShX8mvERDULBaVjfmRIw",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "urlencoded",
+					"urlencoded": [
+						{
+							"key": "name",
+							"value": "wwwz",
+							"type": "text"
+						},
+						{
+							"key": "participante",
+							"value": "1",
+							"type": "text"
+						},
+						{
+							"key": "participante",
+							"value": "3",
+							"type": "text"
+						},
+						{
+							"key": "participante",
+							"value": "2",
+							"type": "text",
+							"disabled": true
+						}
+					]
+				},
+				"url": {
+					"raw": "http://127.0.0.1:8000/api/v1/roomcreate/",
+					"protocol": "http",
+					"host": [
+						"127",
+						"0",
+						"0",
+						"1"
+					],
+					"port": "8000",
+					"path": [
+						"api",
+						"v1",
+						"roomcreate",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,10 +1,9 @@
-from rest_framework.generics import get_object_or_404
+
 from rest_framework import serializers
 from django.contrib.auth.models import User
 
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
-from rest_framework.validators import UniqueValidator
 
 from chat.models import Room, Message, TokenUser
 
@@ -18,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
-        POST: http://localhost:8000/api/token/
+        Создание токена
     """
     @classmethod
     def get_token(cls, user):
@@ -26,24 +25,26 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Save user token to base
         access_token_obj = token.access_token
-        logging.warning(access_token_obj)
         user_id = access_token_obj['user_id']
         cur_user = User.objects.get(id=int(user_id))
 
-        # Добавить get or create 10/04/2023 если пользователь был но не создавался token
-        # Filter and create if not exists
-        acc = TokenUser.objects.create(user=cur_user)
-        # acc.token_access = str(token.access_token)
-        acc.token_access = str(access_token_obj)
-        acc.token_refresh = str(token)
-        acc.save()
+        acc = TokenUser.objects.filter(user=cur_user)
+        
+        if acc:
+            acc.token_access = str(token.access_token)
+            acc.token_refresh = str(token)
+        else:
+            acc = TokenUser.objects.create(user=cur_user, 
+                                           token_access=str(token.access_token), 
+                                            token_refresh=str(token)
+                                            )
+            acc.save()
 
         return token
 
 
 class UserSerializer(serializers.ModelSerializer):
     """ Создание пользователя и токена
-        POST: http://127.0.0.1:8000/api/user/create/
     """
     class Meta:
         model = User
@@ -82,9 +83,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class UserListSerializer(serializers.ModelSerializer):
     """ Получение списка id users
-        GET: http://127.0.0.1:8000/api/users/
     """
-
     rooms = serializers.SerializerMethodField(method_name='related_rooms')
 
     class Meta:
@@ -105,8 +104,6 @@ class UserListSerializer(serializers.ModelSerializer):
 class UserDetailSerializer(serializers.ModelSerializer):
     """ одержання списку Thread'ів для будь-якого user'a (у кожному Thread'e має лежати
         останнє повідомлення, якщо таке є);
-
-        GET: http://127.0.0.1:8000/api/users/3/
     """
 
     rooms = serializers.SerializerMethodField(method_name='related_rooms')
@@ -154,8 +151,6 @@ class UserDetailSerializer(serializers.ModelSerializer):
 
 class UserUnreadDetailSerializer(serializers.ModelSerializer):
     """ непрочитанные сообщения пользователем
-        GET: http://127.0.0.1:8000/api/usersunread/3/
-
     """
     unread = serializers.SerializerMethodField(
         method_name='related_rooms_unread')
@@ -184,7 +179,6 @@ class UserUnreadDetailSerializer(serializers.ModelSerializer):
 
 class RoomSerializer(serializers.ModelSerializer):
     """ List of rooms
-        GET: http://127.0.0.1:8000/api/rooms/
     """
     class Meta:
         model = Room
@@ -192,8 +186,7 @@ class RoomSerializer(serializers.ModelSerializer):
 
 
 class UserListingField(serializers.RelatedField):
-    """
-        Добавление информации о пользователях User
+    """ Добавление информации о пользователях User
     """
 
     def to_representation(self, value):
@@ -202,7 +195,6 @@ class UserListingField(serializers.RelatedField):
 
 class RoomDetailSerializer(serializers.ModelSerializer):
     """ Детальная информация о Thread
-        GET: http://127.0.0.1:8000/api/rooms/4/
     """
     participante = UserListingField(many=True, read_only=True)
 
@@ -214,7 +206,6 @@ class RoomDetailSerializer(serializers.ModelSerializer):
 
 class RoomContentDetailSerializer(serializers.ModelSerializer):
     """ Список сообщений Thread
-        GET: http://127.0.0.1:8000/api/roomcontent/1/
     """
     messages = serializers.SerializerMethodField(method_name='get_messages')
 

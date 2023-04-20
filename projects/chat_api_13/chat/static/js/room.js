@@ -158,7 +158,7 @@ function connect() {
 
         console.log("Start History");
         // Send update messages delivered status, time interval every 4sec 
-        let interval = setInterval(()=> update_messages_is_read(chatSocket), 4000);
+        let interval = setInterval(()=> update_messages_is_read(chatSocket), 3000);
     }
 
     chatSocket.onclose = function (e) {
