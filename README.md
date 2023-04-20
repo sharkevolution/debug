@@ -43,8 +43,9 @@
 	  README.md
 	  requirements.txt
 	
-#### Установите пакеты и зависимости в каталоге `debug`
+#### Установите пакеты и зависимости перейдите в каталог `debug`
 
+    cd debug
     pip install -r requirements.txt
 
 #### Выполните следующие команды, чтобы создать нужные таблицы в базе данных `sqlite3`
@@ -53,6 +54,7 @@
 
 создание миграций
 
+    cd projects\chat_api_13
     python manage.py makemigrations
 
 запуск миграций
