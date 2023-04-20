@@ -26,12 +26,15 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
 
         # Save user token to base
         access_token_obj = token.access_token
+        logging.warning(access_token_obj)
         user_id = access_token_obj['user_id']
         cur_user = User.objects.get(id=int(user_id))
 
         # Добавить get or create 10/04/2023 если пользователь был но не создавался token
-        acc = TokenUser.objects.get(user=cur_user)
-        acc.token_access = str(token.access_token)
+        # Filter and create if not exists
+        acc = TokenUser.objects.create(user=cur_user)
+        # acc.token_access = str(token.access_token)
+        acc.token_access = str(access_token_obj)
         acc.token_refresh = str(token)
         acc.save()
 
