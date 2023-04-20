@@ -49,9 +49,13 @@
 
 #### Выполните следующие команды, чтобы создать нужные таблицы в базе данных `sqlite3`
 
-    Перейдите в каталог `debug\projects\chat_api_13`, выполните следующие команды:
+Перейдите в каталог `debug\projects\chat_api_13`
+
+создание миграций
 
     python manage.py makemigrations
+
+запуск миграций
 
     python manage.py migrate
 
