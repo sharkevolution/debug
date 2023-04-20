@@ -43,13 +43,16 @@
 	  README.md
 	  requirements.txt
 	
-#### Установите пакеты и зависимости
+#### Установите пакеты и зависимости в каталоге `debug`
 
     pip install -r requirements.txt
 
 #### Выполните следующие команды, чтобы создать нужные таблицы в базе данных `sqlite3`
 
+    Перейдите в каталог `debug\projects\chat_api_13`, выполните следующие команды:
+
     python manage.py makemigrations
+
     python manage.py migrate
 
 #### Создание суперпользователя
